@@ -13,13 +13,11 @@ Expense Manager is an open-source, privacy-first Android app for salaried people
 ## Repository layout
 
 ```
-app/                 React Native app (TypeScript)
-android-modules/     Kotlin native modules (SMS, lock)
+app/                 React Native app (TypeScript) + Kotlin SMS module
 packages/parser/     SMS parser engine (TypeScript, platform-independent)
 parsers/             Bank parser templates (YAML)
 fixtures/            Masked sample SMS + expected output, per bank
-website/             expansemanager.com docs site
-docs/                PRD, architecture notes, ADRs
+docs/                Architecture notes and the parser guide
 ```
 
 ## Getting started
@@ -32,9 +30,19 @@ npm install
 npm run android
 ```
 
+Parser engine and bank templates:
+
+```bash
+cd packages/parser
+npm install
+npm test
+```
+
+Want your bank supported? See [docs/parser-guide.md](docs/parser-guide.md).
+
 ## Status
 
-Early development. Current milestone: onboarding flow and app foundations.
+Early development. Done: onboarding flow, SMS parser engine with templates for HDFC, ICICI, SBI, Axis and Bank of India, native SMS inbox reader. Next: encrypted database, transactions and categorisation.
 
 ## License
 

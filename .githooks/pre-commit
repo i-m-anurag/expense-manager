@@ -1,0 +1,6 @@
+#!/bin/sh
+# Enable with: git config core.hooksPath .githooks
+# Blocks commits whose parser fixtures look unmasked (PRD OSS-04).
+if git diff --cached --name-only | grep -q '^fixtures/'; then
+  (cd packages/parser && npm run -s check:fixtures) || exit 1
+fi
