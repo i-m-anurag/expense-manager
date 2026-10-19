@@ -10,11 +10,12 @@ import { fonts } from '../../theme/tokens';
 import {
   ACCOUNT_TYPE_LABELS,
   AccountType,
+  OnboardingAccount,
+  toRupees,
   useOnboarding,
 } from '../OnboardingContext';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { useNextStep } from '../flow';
-import { ScannedAccount } from '../sampleScan';
 
 const TYPES = Object.keys(ACCOUNT_TYPE_LABELS) as AccountType[];
 
@@ -22,7 +23,7 @@ export function AccountsScreen() {
   const { state, update } = useOnboarding();
   const next = useNextStep('Accounts');
 
-  const patch = (id: string, p: Partial<ScannedAccount>) =>
+  const patch = (id: string, p: Partial<OnboardingAccount>) =>
     update({
       accounts: state.accounts.map(a => (a.id === id ? { ...a, ...p } : a)),
     });
@@ -37,7 +38,14 @@ export function AccountsScreen() {
           ? { ...a, type, include: emergency ? false : a.include }
           : a,
       ),
-      ...(emergency ? { emergencyAccountId: id } : {}),
+      ...(emergency
+        ? {
+            emergencyAccountId: id,
+            emergencyBalance: toRupees(
+              state.accounts.find(a => a.id === id)?.balancePaise ?? 0,
+            ),
+          }
+        : {}),
     });
   };
 
@@ -74,7 +82,7 @@ export function AccountsScreen() {
 }
 
 interface CardProps {
-  account: ScannedAccount;
+  account: OnboardingAccount;
   onRename: (name: string) => void;
   onType: (type: AccountType) => void;
   onInclude: (include: boolean) => void;

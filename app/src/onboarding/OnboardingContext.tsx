@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
+import type { ScanSummary } from '@expense-manager/parser';
 import { BudgetBucket, Split, TemplateId } from './budget';
-import { ScannedAccount, sampleScan } from './sampleScan';
 
 export type AccountType =
   | 'salary'
@@ -19,12 +19,21 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   cash: 'Cash wallet',
 };
 
+export interface OnboardingAccount {
+  id: string;
+  name: string;
+  type: AccountType;
+  include: boolean;
+  balancePaise: number | null;
+}
+
 export interface OnboardingState {
   smsGranted: boolean;
   notificationsGranted: boolean;
   manualMode: boolean;
-  scanned: boolean;
-  accounts: ScannedAccount[];
+  // Result of the 90-day SMS scan; null until it has run.
+  scan: ScanSummary | null;
+  accounts: OnboardingAccount[];
   income: number;
   cycleDay: number;
   cycleMode: 'salary' | 'calendar';
@@ -34,7 +43,6 @@ export interface OnboardingState {
   emergencyMonths: number;
   emergencyAccountId: string | null;
   emergencyBalance: number;
-  averageEssentialSpend: number;
   merchantMemory: Record<string, BudgetBucket>;
   pin: string | null;
   biometric: boolean;
@@ -46,7 +54,7 @@ const initialState: OnboardingState = {
   smsGranted: false,
   notificationsGranted: false,
   manualMode: false,
-  scanned: false,
+  scan: null,
   accounts: [],
   income: 100000,
   cycleDay: 1,
@@ -63,16 +71,40 @@ const initialState: OnboardingState = {
   emergencyMonths: 6,
   emergencyAccountId: null,
   emergencyBalance: 0,
-  averageEssentialSpend: 50000,
   merchantMemory: {},
   pin: null,
   biometric: true,
 };
 
+const SHORT_BANK: Record<string, string> = {
+  hdfc: 'HDFC',
+  icici: 'ICICI',
+  sbi: 'SBI',
+  axis: 'Axis',
+  boi: 'BOI',
+};
+
+// "HDFC ••4521", "ICICI credit card ••1123" (brief §13 sample names).
+export function accountName(a: ScanSummary['accounts'][number]): string {
+  const bank = SHORT_BANK[a.bankCode] ?? a.bankName;
+  return a.kind === 'card'
+    ? `${bank} credit card ••${a.mask}`
+    : `${bank} ••${a.mask}`;
+}
+
+export const toRupees = (paise: number) => Math.round(paise / 100);
+
+// Average monthly Need spend from the scan, or the Need budget when there is no
+// history yet (PRD EMF-02).
+export function essentialSpend(state: OnboardingState): number {
+  const fromScan = state.scan ? toRupees(state.scan.averagesPaise.need) : 0;
+  return fromScan > 0 ? fromScan : state.split.need;
+}
+
 interface Ctx {
   state: OnboardingState;
   update: (patch: Partial<OnboardingState>) => void;
-  applyScan: () => void;
+  applyScan: (scan: ScanSummary) => void;
 }
 
 const OnboardingContext = createContext<Ctx | null>(null);
@@ -87,17 +119,19 @@ export function OnboardingProvider({
     () => ({
       state,
       update: patch => setState(s => ({ ...s, ...patch })),
-      applyScan: () =>
+      applyScan: scan =>
         setState(s => ({
           ...s,
-          scanned: true,
-          accounts: sampleScan.accounts,
-          income: sampleScan.salary.amount,
-          cycleDay: sampleScan.salary.day,
-          emergencyAccountId:
-            sampleScan.accounts.find(a => a.type === 'emergency')?.id ?? null,
-          emergencyBalance: sampleScan.emergencyBalance,
-          averageEssentialSpend: sampleScan.averageEssentialSpend,
+          scan,
+          accounts: scan.accounts.map(a => ({
+            id: a.id,
+            name: accountName(a),
+            type: a.suggestedType,
+            include: true,
+            balancePaise: a.lastBalancePaise,
+          })),
+          income: scan.salary ? toRupees(scan.salary.amountPaise) : s.income,
+          cycleDay: scan.salary?.day ?? s.cycleDay,
         })),
     }),
     [state],

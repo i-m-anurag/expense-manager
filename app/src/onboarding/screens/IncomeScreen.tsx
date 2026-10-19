@@ -10,14 +10,15 @@ import { groupINR, ordinal } from '../../utils/format';
 import { useOnboarding } from '../OnboardingContext';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { useNextStep } from '../flow';
-import { sampleScan } from '../sampleScan';
 
 export function IncomeScreen() {
   const { c } = useTheme();
   const { state, update } = useOnboarding();
   const next = useNextStep('Income');
-  // Salary was detected only if we scanned SMS; manual mode starts in edit mode (ONB-06).
-  const detected = state.scanned;
+  // ONB-06: pre-filled when the scan found a salary; otherwise start in edit mode.
+  const salary = state.scan?.salary ?? null;
+  const detected = salary !== null;
+  const salaryAccount = state.accounts.find(a => a.id === salary?.accountId);
   const [editing, setEditing] = useState(!detected);
   const [amountText, setAmountText] = useState(String(state.income));
   const [dayText, setDayText] = useState(String(state.cycleDay));
@@ -100,7 +101,7 @@ export function IncomeScreen() {
           <>
             <Txt variant="label" tone="secondary">
               Monthly salary
-              {detected ? ` · ${sampleScan.salary.accountName}` : ''}
+              {salaryAccount ? ` · ${salaryAccount.name}` : ''}
             </Txt>
             <Amount
               value={state.income}
@@ -113,7 +114,7 @@ export function IncomeScreen() {
               <Txt variant="bodySemi">{ordinal(state.cycleDay)}</Txt> of each
               month
               {detected && !state.incomeConfirmed
-                ? ` for the last ${sampleScan.salary.monthsSeen} months.`
+                ? ` for the last ${salary.monthsSeen} months.`
                 : '.'}
             </Txt>
             <View style={styles.actions}>

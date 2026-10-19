@@ -8,10 +8,9 @@ import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { useTheme } from '../../theme/ThemeProvider';
 import { fonts, motion, radius } from '../../theme/tokens';
 import { BudgetBucket } from '../budget';
-import { useOnboarding } from '../OnboardingContext';
+import { toRupees, useOnboarding } from '../OnboardingContext';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { useNextStep } from '../flow';
-import { sampleScan } from '../sampleScan';
 
 const BUCKETS: { id: BudgetBucket; label: string }[] = [
   { id: 'need', label: 'Need' },
@@ -26,7 +25,7 @@ export function TrainingScreen() {
   const reduceMotion = useReduceMotion();
   const { state, update } = useOnboarding();
   const next = useNextStep('Training');
-  const merchants = sampleScan.merchants;
+  const merchants = state.scan?.merchants ?? [];
   const [index, setIndex] = useState(0);
   const slide = useRef(new Animated.Value(0)).current;
   const busy = useRef(false);
@@ -75,7 +74,10 @@ export function TrainingScreen() {
           <View
             style={[
               styles.fill,
-              { backgroundColor: c.gold, width: `${(done / total) * 100}%` },
+              {
+                backgroundColor: c.gold,
+                width: `${total ? (done / total) * 100 : 100}%`,
+              },
             ]}
           />
         </View>
@@ -161,7 +163,7 @@ export function TrainingScreen() {
             <Txt tone="secondary" style={styles.mt4}>
               {cur.count} payments ·{' '}
               <Amount
-                value={cur.total}
+                value={toRupees(cur.totalPaise)}
                 size={15}
                 family={fonts.interSemiBold}
               />

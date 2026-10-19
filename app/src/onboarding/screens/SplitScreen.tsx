@@ -15,10 +15,9 @@ import {
   fromAverages,
   splitTotal,
 } from '../budget';
-import { useOnboarding } from '../OnboardingContext';
+import { toRupees, useOnboarding } from '../OnboardingContext';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { useNextStep } from '../flow';
-import { sampleScan } from '../sampleScan';
 
 const TEMPLATES: { id: TemplateId; label: string }[] = [
   { id: 'fiftyThirtyTwenty', label: '50/30/20' },
@@ -46,9 +45,13 @@ export function SplitScreen() {
       update({ template: id, split: fiftyThirtyTwenty(income, split.loan) });
     } else if (id === 'zeroBased') {
       // Pre-fill from scanned averages when we have them (ONB-07).
-      const avg = state.scanned
-        ? sampleScan.averages
-        : { need: 0, want: 0, investment: 0, loan: 0 };
+      const a = state.scan?.averagesPaise;
+      const avg = {
+        need: toRupees(a?.need ?? 0),
+        want: toRupees(a?.want ?? 0),
+        investment: toRupees(a?.investment ?? 0),
+        loan: toRupees(a?.loan ?? 0),
+      };
       update({ template: id, split: fromAverages(avg, split.emergency) });
     } else {
       update({ template: id });

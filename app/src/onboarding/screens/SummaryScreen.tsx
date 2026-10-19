@@ -7,8 +7,8 @@ import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { useTheme } from '../../theme/ThemeProvider';
 import { groupINR } from '../../utils/format';
 import { OnboardingLayout } from '../OnboardingLayout';
+import { toRupees, useOnboarding } from '../OnboardingContext';
 import { useNextStep } from '../flow';
-import { sampleScan } from '../sampleScan';
 
 const CHART_H = 150;
 
@@ -27,11 +27,16 @@ export function SummaryScreen() {
     }).start();
   }, [grow, reduceMotion]);
 
-  const max = Math.max(...sampleScan.months.map(m => m.total));
-  const avg = sampleScan.averages;
-  const top = (Object.keys(avg) as (keyof typeof avg)[]).reduce((a, b) =>
-    avg[a] >= avg[b] ? a : b,
-  );
+  const { state } = useOnboarding();
+  const scan = state.scan;
+  if (!scan) {
+    return null;
+  }
+  const months = scan.months;
+  const max = Math.max(1, ...months.map(m => m.totalPaise));
+  const avg = scan.averagesPaise;
+  const buckets = ['need', 'want', 'investment', 'loan'] as const;
+  const top = buckets.reduce((a, b) => (avg[a] >= avg[b] ? a : b));
   const topLabel = {
     need: 'Needs',
     want: 'Wants',
@@ -43,7 +48,9 @@ export function SummaryScreen() {
     { n: 'Want', color: c.bucket.want, v: avg.want },
     { n: 'Investment', color: c.bucket.investment, v: avg.investment },
     { n: 'Loan / EMI', color: c.bucket.loan, v: avg.loan },
-  ];
+    // Spending we can't place yet; Quick training and later tagging sort it.
+    { n: 'Not sorted yet', color: c.textTertiary, v: avg.unsorted },
+  ].filter(r => r.n !== 'Not sorted yet' || r.v > 0);
 
   return (
     <OnboardingLayout
@@ -56,24 +63,26 @@ export function SummaryScreen() {
         Here's where your money went
       </Txt>
       <Txt tone="secondary" style={styles.mt8}>
-        You spent about ₹{groupINR(sampleScan.averageMonthlySpend)} a month,
-        mostly on {topLabel}.
+        You spent about ₹{groupINR(toRupees(scan.averageMonthlySpendPaise))} a
+        month{avg[top] > 0 ? `, mostly on ${topLabel}` : ''}.
       </Txt>
 
       <Card style={styles.mt18}>
         <View style={styles.chart}>
-          {sampleScan.months.map(m => (
+          {months.map(m => (
             <View
               key={m.label}
               style={styles.col}
               accessible
-              accessibilityLabel={`${m.label}: ${groupINR(m.total)} rupees`}
+              accessibilityLabel={`${m.label}: ${groupINR(
+                toRupees(m.totalPaise),
+              )} rupees`}
             >
               <Animated.View
                 style={[
                   styles.bar,
                   {
-                    height: (m.total / max) * (CHART_H - 26),
+                    height: Math.max(4, (m.totalPaise / max) * (CHART_H - 26)),
                     transform: [{ scaleY: grow }],
                   },
                 ]}
@@ -92,6 +101,9 @@ export function SummaryScreen() {
                 />
                 <View
                   style={{ flex: m.loan, backgroundColor: c.bucket.loan }}
+                />
+                <View
+                  style={{ flex: m.unsorted, backgroundColor: c.textTertiary }}
                 />
               </Animated.View>
               <Txt variant="caption" tone="secondary" style={styles.medium}>
@@ -118,7 +130,7 @@ export function SummaryScreen() {
             <Txt variant="bodyMedium" style={styles.flex}>
               {r.n}
             </Txt>
-            <Amount value={r.v} size={16} />
+            <Amount value={toRupees(r.v)} size={16} />
           </View>
         ))}
       </Card>

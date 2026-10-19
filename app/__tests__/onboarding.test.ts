@@ -4,7 +4,7 @@ import { nextStep } from '../src/onboarding/flow';
 
 jest.mock('@react-navigation/native', () => ({ useNavigation: jest.fn() }));
 
-const base = { manualMode: false } as OnboardingState;
+const base = { manualMode: false, scan: null } as OnboardingState;
 
 test('full journey order with SMS access', () => {
   const order = ['Welcome'];
@@ -34,6 +34,15 @@ test('manual mode skips SMS-dependent steps', () => {
   expect(nextStep('SmsDenied', manual)).toBe('Notifications');
   expect(nextStep('Notifications', manual)).toBe('Income');
   expect(nextStep('Emergency', manual)).toBe('Lock');
+});
+
+test('a scan that found nothing skips Summary, Accounts and Training', () => {
+  const empty = {
+    ...base,
+    scan: { transactionCount: 0 },
+  } as unknown as OnboardingState;
+  expect(nextStep('Scan', empty)).toBe('Income');
+  expect(nextStep('Emergency', empty)).toBe('Lock');
 });
 
 test('50/30/20 assigns the whole salary', () => {

@@ -1,71 +1,101 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Txt } from '../../components/Txt';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
+import { ScanProgress, scanInbox } from '../../sms/scan';
 import { useTheme } from '../../theme/ThemeProvider';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { useOnboarding } from '../OnboardingContext';
 import { useNextStep } from '../flow';
-import { sampleScan } from '../sampleScan';
 
 const SIZE = 180;
 const R = 80;
 const CIRC = 2 * Math.PI * R;
-const DURATION = 2600;
 
-// Simulated until the native SMS module (M0) and parser engine (M1) land; the
-// real scan will report progress from readInbox() in the same shape.
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+type Phase = 'scanning' | 'done' | 'error';
+
+// PRD ONB-04: scan the last 90 days of bank SMS with live counters.
 export function ScanScreen() {
   const { c } = useTheme();
   const reduceMotion = useReduceMotion();
   const { applyScan } = useOnboarding();
   const next = useNextStep('Scan');
-  const [progress, setProgress] = useState(0);
-  const done = progress >= 1;
+  const [phase, setPhase] = useState<Phase>('scanning');
+  const [progress, setProgress] = useState<ScanProgress>({
+    read: 0,
+    total: 0,
+    transactions: 0,
+    accounts: 0,
+  });
+  const ring = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (reduceMotion) {
-      setProgress(1);
-      return;
-    }
-    const start = Date.now();
-    const id = setInterval(() => {
-      const p = Math.min(1, (Date.now() - start) / DURATION);
-      setProgress(p);
-      if (p >= 1) {
-        clearInterval(id);
-      }
-    }, 40);
-    return () => clearInterval(id);
-  }, [reduceMotion]);
-
-  useEffect(() => {
-    if (done) {
-      applyScan();
-    }
-    // applyScan is stable in behaviour; only run once when the scan finishes.
+    let cancelled = false;
+    scanInbox(p => !cancelled && setProgress(p))
+      .then(outcome => {
+        if (cancelled) {
+          return;
+        }
+        applyScan(outcome.summary);
+        setProgress(p => ({
+          ...p,
+          transactions: outcome.summary.transactionCount,
+          accounts: outcome.summary.accounts.length,
+        }));
+        setPhase('done');
+      })
+      .catch(() => !cancelled && setPhase('error'));
+    return () => {
+      cancelled = true;
+    };
+    // applyScan only writes state; run the scan once per visit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [done]);
+  }, []);
 
-  const txns = Math.round(sampleScan.transactionCount * progress);
-  const accounts = Math.min(
-    sampleScan.accounts.length,
-    Math.ceil(progress * sampleScan.accounts.length * 1.1),
-  );
-  const pct = Math.round(progress * 100);
+  const fraction =
+    phase === 'scanning'
+      ? progress.total
+        ? progress.read / progress.total
+        : 0
+      : 1;
+
+  useEffect(() => {
+    Animated.timing(ring, {
+      toValue: fraction,
+      duration: reduceMotion ? 0 : 300,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false,
+    }).start();
+  }, [fraction, reduceMotion, ring]);
+
+  const pct = Math.round(fraction * 100);
+  const { transactions, accounts } = progress;
+  const title =
+    phase === 'error'
+      ? "Couldn't read your messages"
+      : phase === 'done'
+      ? transactions
+        ? 'All done'
+        : 'No bank messages found'
+      : 'Reading your messages';
+  const subtitle =
+    phase === 'error'
+      ? 'You can continue and add payments yourself.'
+      : phase === 'done' && !transactions
+      ? 'We support HDFC, ICICI, SBI, Axis and Bank of India. You can add payments yourself.'
+      : 'This stays on your phone. Usually under a minute.';
 
   return (
     <OnboardingLayout
       stage={1}
       centered
-      onSkip={() => {
-        applyScan();
-        next();
-      }}
-      cta="See what we found"
-      ctaDisabled={!done}
-      onCta={() => next()}
+      onSkip={phase === 'scanning' ? undefined : () => next()}
+      cta={transactions ? 'See what we found' : 'Continue'}
+      ctaDisabled={phase === 'scanning'}
+      onCta={() => next(phase === 'error' ? { manualMode: true } : undefined)}
     >
       <View style={styles.wrap}>
         <View
@@ -83,7 +113,7 @@ export function ScanScreen() {
               stroke={c.border}
               strokeWidth={8}
             />
-            <Circle
+            <AnimatedCircle
               cx={90}
               cy={90}
               r={R}
@@ -92,7 +122,10 @@ export function ScanScreen() {
               strokeWidth={8}
               strokeLinecap="round"
               strokeDasharray={CIRC}
-              strokeDashoffset={CIRC * (1 - progress)}
+              strokeDashoffset={ring.interpolate({
+                inputRange: [0, 1],
+                outputRange: [CIRC, 0],
+              })}
             />
           </Svg>
           <View style={styles.ringLabel}>
@@ -104,20 +137,22 @@ export function ScanScreen() {
         </View>
         <View>
           <Txt variant="h1" center accessibilityRole="header">
-            {done ? 'All done' : 'Reading your messages'}
+            {title}
           </Txt>
-          <Txt
-            variant="bodySemi"
-            tone="gold"
-            center
-            accessibilityLiveRegion="polite"
-            style={styles.counts}
-          >
-            {txns} transactions · {accounts}{' '}
-            {accounts === 1 ? 'account' : 'accounts'} found
-          </Txt>
+          {phase !== 'error' ? (
+            <Txt
+              variant="bodySemi"
+              tone="gold"
+              center
+              accessibilityLiveRegion="polite"
+              style={styles.counts}
+            >
+              {transactions} transactions · {accounts}{' '}
+              {accounts === 1 ? 'account' : 'accounts'} found
+            </Txt>
+          ) : null}
           <Txt variant="label" tone="secondary" center style={styles.note}>
-            This stays on your phone. Usually under a minute.
+            {subtitle}
           </Txt>
         </View>
       </View>

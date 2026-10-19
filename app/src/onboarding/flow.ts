@@ -31,9 +31,13 @@ export function nextStep(current: Step, state: OnboardingState): Step {
     case 'Notifications':
       return state.manualMode ? 'Income' : 'Scan';
   }
+  // A scan that found nothing behaves like manual mode from here on.
+  const noData =
+    state.manualMode ||
+    (state.scan !== null && state.scan.transactionCount === 0);
   const i = AFTER_PERMISSIONS.indexOf(current);
   const rest = AFTER_PERMISSIONS.slice(i + 1);
-  return rest.find(s => !(state.manualMode && NEEDS_SMS.includes(s))) ?? 'Done';
+  return rest.find(s => !(noData && NEEDS_SMS.includes(s))) ?? 'Done';
 }
 
 // Navigates to the step after `current`, reading the latest state (pass any

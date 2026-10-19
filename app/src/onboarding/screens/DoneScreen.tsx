@@ -8,7 +8,6 @@ import { useTheme } from '../../theme/ThemeProvider';
 import { groupINR, ordinal } from '../../utils/format';
 import { useOnboarding } from '../OnboardingContext';
 import { OnboardingLayout } from '../OnboardingLayout';
-import { sampleScan } from '../sampleScan';
 
 const USER_NAME = 'Anurag'; // TODO: ask for a name during onboarding.
 
@@ -22,9 +21,9 @@ export function DoneScreen({ navigation }: ScreenProps<'Done'>) {
       : 'PIN'
     : 'Off';
   const recap: [string, string][] = [
-    ...(state.scanned
+    ...(state.scan && !state.manualMode
       ? ([
-          ['Transactions found', String(sampleScan.transactionCount)],
+          ['Transactions found', String(state.scan.transactionCount)],
           ['Accounts', String(state.accounts.length)],
         ] as [string, string][])
       : [['Mode', 'Manual'] as [string, string]]),

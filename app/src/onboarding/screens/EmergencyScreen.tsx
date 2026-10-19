@@ -7,7 +7,7 @@ import { Txt } from '../../components/Txt';
 import { useTheme } from '../../theme/ThemeProvider';
 import { fonts } from '../../theme/tokens';
 import { groupINR } from '../../utils/format';
-import { useOnboarding } from '../OnboardingContext';
+import { essentialSpend, useOnboarding } from '../OnboardingContext';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { useNextStep } from '../flow';
 
@@ -20,9 +20,8 @@ export function EmergencyScreen() {
   const next = useNextStep('Emergency');
   const months = state.emergencyMonths;
   // EMF-01/02: target = months × average Need spend (the Need budget before history exists).
-  const essentials = state.scanned
-    ? state.averageEssentialSpend
-    : state.split.need;
+  const essentials = essentialSpend(state);
+  const fromHistory = essentials !== state.split.need;
   const target = essentials * months;
   const linked = state.accounts.find(a => a.id === state.emergencyAccountId);
 
@@ -102,9 +101,8 @@ export function EmergencyScreen() {
         </View>
       </Card>
       <Txt variant="label" tone="tertiary" style={styles.footnote}>
-        Based on{' '}
-        {state.scanned ? 'average essential spend' : 'your Need budget'} of ₹
-        {groupINR(essentials)} a month.
+        Based on {fromHistory ? 'average essential spend' : 'your Need budget'}{' '}
+        of ₹{groupINR(essentials)} a month.
       </Txt>
     </OnboardingLayout>
   );

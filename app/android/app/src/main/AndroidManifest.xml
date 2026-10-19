@@ -26,5 +26,16 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- Incoming bank SMS → Headless JS task (PRD SMS-07). -->
+      <receiver
+        android:name=".sms.SmsReceiver"
+        android:exported="true"
+        android:permission="android.permission.BROADCAST_SMS">
+        <intent-filter>
+          <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+        </intent-filter>
+      </receiver>
+      <service android:name=".sms.SmsHeadlessService" android:exported="false" />
     </application>
 </manifest>
