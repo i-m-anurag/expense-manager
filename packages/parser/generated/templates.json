@@ -1,0 +1,421 @@
+[
+  {
+    "bank": "Axis Bank",
+    "code": "axis",
+    "senders": [
+      "AXISBK",
+      "AXISBN"
+    ],
+    "ignore": [
+      {
+        "pattern": "(?i)\\bOTP\\b|one.time.password",
+        "reason": "otp"
+      },
+      {
+        "pattern": "(?i)\\b(declined|failed|unsuccessful)\\b",
+        "reason": "failed"
+      },
+      {
+        "pattern": "(?i)will be debited|is due on|due date",
+        "reason": "other"
+      },
+      {
+        "pattern": "(?i)^(?![\\s\\S]*\\b(debited|credited|spent|sent)\\b)[\\s\\S]*(pre-?approved|apply now|offer)",
+        "reason": "promo"
+      },
+      {
+        "pattern": "(?i)^(?![\\s\\S]*(debited|credited|spent))[\\s\\S]*(avl|available)\\.?\\s*(bal|lmt|limit)",
+        "reason": "balance"
+      }
+    ],
+    "patterns": [
+      {
+        "id": "axis_upi_debit",
+        "type": "upi",
+        "direction": "debit",
+        "regex": "(?i)INR\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+debited\\s+A/c\\s+no\\.\\s*[xX*]*(?<account>\\d{3,6})\\s+(?<date>\\d{2}-\\d{2}-\\d{2}),?\\s+(?<time>\\d{2}:\\d{2}(?::\\d{2})?)(?:\\s*IST)?\\s+UPI/P2[AM]/(?<ref>\\d+)/(?<payee>[^\\n]+)",
+        "date_format": "dd-MM-yy"
+      },
+      {
+        "id": "axis_upi_credit",
+        "type": "upi",
+        "direction": "credit",
+        "regex": "(?i)INR\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+credited\\s+A/c\\s+no\\.\\s*[xX*]*(?<account>\\d{3,6})\\s+(?<date>\\d{2}-\\d{2}-\\d{2}),?\\s+(?<time>\\d{2}:\\d{2}(?::\\d{2})?)(?:\\s*IST)?\\s+UPI/P2[AM]/(?<ref>\\d+)/(?<payee>[^\\n]+)",
+        "date_format": "dd-MM-yy"
+      },
+      {
+        "id": "axis_card_spend",
+        "type": "credit_card",
+        "direction": "debit",
+        "account_kind": "card",
+        "regex": "(?i)Spent\\s+Card\\s+no\\.\\s*[xX*]*(?<account>\\d{4})\\s+INR\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+(?<date>\\d{2}-\\d{2}-\\d{2}),?\\s+(?<time>\\d{2}:\\d{2}(?::\\d{2})?)\\s+(?<payee>[^\\n]+)\\s+Avl\\s+Lmt\\s+INR\\s*(?<limit>[\\d,]+(?:\\.\\d+)?)",
+        "date_format": "dd-MM-yy"
+      },
+      {
+        "id": "axis_account_debit",
+        "type": "other",
+        "direction": "debit",
+        "regex": "(?i)INR\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+debited\\s+A/c\\s+no\\.\\s*[xX*]*(?<account>\\d{3,6})\\s+(?<date>\\d{2}-\\d{2}-\\d{2}),?\\s+(?<time>\\d{2}:\\d{2}(?::\\d{2})?)(?:\\s*IST)?\\s+(?:(?:N?ACH-DR|NEFT|IMPS|ATM-WDL)/)?(?<payee>[^/\\n]+)",
+        "date_format": "dd-MM-yy",
+        "type_overrides": [
+          {
+            "when": "(?i)N?ACH-DR",
+            "type": "auto_debit"
+          },
+          {
+            "when": "(?i)ATM",
+            "type": "atm"
+          },
+          {
+            "when": "(?i)\\bNEFT/",
+            "type": "neft"
+          },
+          {
+            "when": "(?i)\\bIMPS/",
+            "type": "imps"
+          }
+        ]
+      },
+      {
+        "id": "axis_account_credit",
+        "type": "neft",
+        "direction": "credit",
+        "regex": "(?i)INR\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+credited\\s+A/c\\s+no\\.\\s*[xX*]*(?<account>\\d{3,6})\\s+(?<date>\\d{2}-\\d{2}-\\d{2}),?\\s+(?<time>\\d{2}:\\d{2}(?::\\d{2})?)(?:\\s*IST)?\\s+(?:(?:NEFT|IMPS|RTGS)/(?:[A-Z0-9]+/)?)?(?<payee>[^/\\n]+)",
+        "date_format": "dd-MM-yy",
+        "type_overrides": [
+          {
+            "when": "(?i)salary|\\bsal\\b",
+            "type": "salary"
+          },
+          {
+            "when": "(?i)\\bIMPS/",
+            "type": "imps"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "bank": "Bank of India",
+    "code": "boi",
+    "senders": [
+      "BOIIND",
+      "BOISMS",
+      "BOIUPI"
+    ],
+    "ignore": [
+      {
+        "pattern": "(?i)\\bOTP\\b|one.time.password",
+        "reason": "otp"
+      },
+      {
+        "pattern": "(?i)\\b(declined|failed|unsuccessful)\\b",
+        "reason": "failed"
+      },
+      {
+        "pattern": "(?i)will be debited|is due on|due date",
+        "reason": "other"
+      },
+      {
+        "pattern": "(?i)^(?![\\s\\S]*\\b(debited|credited|spent|sent)\\b)[\\s\\S]*(pre-?approved|apply now|offer)",
+        "reason": "promo"
+      },
+      {
+        "pattern": "(?i)^(?![\\s\\S]*(debited|credited))[\\s\\S]*(avl|available)\\.?\\s*bal",
+        "reason": "balance"
+      }
+    ],
+    "patterns": [
+      {
+        "id": "boi_upi_debit",
+        "type": "upi",
+        "direction": "debit",
+        "regex": "(?i)Rs\\.?\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+debited\\s+A/c\\s*[xX*]*(?<account>\\d{3,6})\\s+and\\s+credited\\s+to\\s+(?<payee>.+?)\\s+via\\s+UPI\\s+Ref\\s+No\\.?\\s*(?<ref>\\d+)\\s+on\\s+(?<date>\\d{1,2}[A-Za-z]{3}\\d{2})",
+        "date_format": "dMMMyy"
+      },
+      {
+        "id": "boi_upi_credit",
+        "type": "upi",
+        "direction": "credit",
+        "regex": "(?i)Rs\\.?\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+Credited\\s+to\\s+your\\s+A/?c\\s*[xX*]*(?<account>\\d{3,6})\\s+on\\s+(?<date>\\d{2}-\\d{2}-\\d{2})\\s+by\\s+UPI\\s+ref\\s+No\\.?\\s*(?<ref>\\d+)\\.?\\s*Avl\\s+Bal\\s+(?<balance>[\\d,]+(?:\\.\\d+)?)",
+        "date_format": "dd-MM-yy"
+      }
+    ]
+  },
+  {
+    "bank": "HDFC Bank",
+    "code": "hdfc",
+    "senders": [
+      "HDFCBK",
+      "HDFCBN"
+    ],
+    "ignore": [
+      {
+        "pattern": "(?i)\\bOTP\\b|one.time.password",
+        "reason": "otp"
+      },
+      {
+        "pattern": "(?i)\\b(declined|failed|unsuccessful|reversal initiated)\\b",
+        "reason": "failed"
+      },
+      {
+        "pattern": "(?i)will be debited|is due on|due date|e-?mandate.*(registered|created)",
+        "reason": "other"
+      },
+      {
+        "pattern": "(?i)^(?![\\s\\S]*\\b(debited|credited|spent|sent)\\b)[\\s\\S]*(pre-?approved|apply now|offer|limit increase|cashback of up to)",
+        "reason": "promo"
+      },
+      {
+        "pattern": "(?i)^(?![\\s\\S]*(debited|credited|spent|sent|deposited|withdrawn|received))[\\s\\S]*(avl|available)\\.?\\s*bal",
+        "reason": "balance"
+      }
+    ],
+    "patterns": [
+      {
+        "id": "hdfc_upi_sent",
+        "type": "upi",
+        "direction": "debit",
+        "regex": "(?i)Sent\\s+Rs\\.?\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+From\\s+HDFC\\s+Bank\\s+A/?C\\s+[*xX]*(?<account>\\d{3,6})\\s+To\\s+(?<payee>.+?)\\s+On\\s+(?<date>\\d{2}/\\d{2}/\\d{2})\\s+Ref\\s+(?<ref>\\d+)",
+        "date_format": "dd/MM/yy"
+      },
+      {
+        "id": "hdfc_upi_credit",
+        "type": "upi",
+        "direction": "credit",
+        "regex": "(?i)Rs\\.?\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+credited\\s+to\\s+HDFC\\s+Bank\\s+A/c\\s+[xX*]*(?<account>\\d{3,6})\\s+on\\s+(?<date>\\d{2}-\\d{2}-\\d{2})\\s+from\\s+VPA\\s+(?<payee>\\S+)\\s+\\(UPI\\s+(?<ref>\\d+)\\)",
+        "date_format": "dd-MM-yy"
+      },
+      {
+        "id": "hdfc_card_spend",
+        "type": "credit_card",
+        "direction": "debit",
+        "account_kind": "card",
+        "regex": "(?i)Spent\\s+Rs\\.?\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+On\\s+HDFC\\s+Bank\\s+Card\\s+[xX*]*(?<account>\\d{4})\\s+At\\s+(?<payee>.+?)\\s+On\\s+(?<date>\\d{4}-\\d{2}-\\d{2}):(?<time>\\d{2}:\\d{2}:\\d{2})",
+        "date_format": "yyyy-MM-dd"
+      },
+      {
+        "id": "hdfc_deposit",
+        "type": "neft",
+        "direction": "credit",
+        "regex": "(?i)INR\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+deposited\\s+in\\s+HDFC\\s+Bank\\s+A/c\\s+[xX*]*(?<account>\\d{3,6})\\s+on\\s+(?<date>\\d{2}-[A-Za-z]{3}-\\d{2})\\s+for\\s+(?:NEFT|IMPS|RTGS)?\\s*Cr-(?:[A-Z0-9]{8,}-)?(?<payee>[^-.]+)[^.]*\\.\\s*Avl\\s+bal:?\\s*INR\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+        "date_format": "dd-MMM-yy",
+        "type_overrides": [
+          {
+            "when": "(?i)salary|\\bsal\\b",
+            "type": "salary"
+          },
+          {
+            "when": "(?i)for\\s+IMPS",
+            "type": "imps"
+          },
+          {
+            "when": "(?i)for\\s+RTGS",
+            "type": "rtgs"
+          }
+        ]
+      },
+      {
+        "id": "hdfc_debit_update",
+        "type": "other",
+        "direction": "debit",
+        "regex": "(?i)INR\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+debited\\s+from\\s+HDFC\\s+Bank\\s+(?:A/c\\s+)?[xX*]*(?<account>\\d{3,6})\\s+on\\s+(?<date>\\d{2}-[A-Za-z]{3}-\\d{2})\\.\\s*Info:\\s*(?:(?:N?ACH|ECS)\\s*D-\\s*)?(?<payee>[^-.]+)[^.]*\\.\\s*Avl\\s+bal:?\\s*INR\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+        "date_format": "dd-MMM-yy",
+        "type_overrides": [
+          {
+            "when": "(?i)\\b(N?ACH|ECS)\\b",
+            "type": "auto_debit"
+          },
+          {
+            "when": "(?i)\\bATM\\b",
+            "type": "atm"
+          },
+          {
+            "when": "(?i)\\bNEFT\\b",
+            "type": "neft"
+          },
+          {
+            "when": "(?i)\\bIMPS\\b",
+            "type": "imps"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "bank": "ICICI Bank",
+    "code": "icici",
+    "senders": [
+      "ICICIB",
+      "ICICIT"
+    ],
+    "ignore": [
+      {
+        "pattern": "(?i)\\bOTP\\b|one.time.password",
+        "reason": "otp"
+      },
+      {
+        "pattern": "(?i)\\b(declined|failed|unsuccessful)\\b",
+        "reason": "failed"
+      },
+      {
+        "pattern": "(?i)will be debited|is due on|due date|mandate.*(registered|created)",
+        "reason": "other"
+      },
+      {
+        "pattern": "(?i)^(?![\\s\\S]*\\b(debited|credited|spent|sent)\\b)[\\s\\S]*(pre-?approved|apply now|offer|limit increase)",
+        "reason": "promo"
+      },
+      {
+        "pattern": "(?i)^(?![\\s\\S]*(debited|credited|spent))[\\s\\S]*(avl|available)\\.?\\s*(bal|limit)",
+        "reason": "balance"
+      }
+    ],
+    "patterns": [
+      {
+        "id": "icici_upi_debit",
+        "type": "upi",
+        "direction": "debit",
+        "regex": "(?i)ICICI\\s+Bank\\s+Acc(?:oun)?t\\s+[xX*]*(?<account>\\d{3,6})\\s+debited\\s+for\\s+Rs\\.?\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+on\\s+(?<date>\\d{2}-[A-Za-z]{3}-\\d{2});\\s*(?<payee>.+?)\\s+credited\\.\\s*UPI:(?<ref>\\d+)",
+        "date_format": "dd-MMM-yy"
+      },
+      {
+        "id": "icici_upi_credit",
+        "type": "upi",
+        "direction": "credit",
+        "regex": "(?i)Acc(?:oun)?t\\s+[xX*]*(?<account>\\d{3,6})\\s+is\\s+credited\\s+with\\s+Rs\\.?\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+on\\s+(?<date>\\d{2}-[A-Za-z]{3}-\\d{2})\\s+from\\s+(?<payee>.+?)\\.\\s*UPI:(?<ref>\\d+)",
+        "date_format": "dd-MMM-yy"
+      },
+      {
+        "id": "icici_card_spend",
+        "type": "credit_card",
+        "direction": "debit",
+        "account_kind": "card",
+        "regex": "(?i)INR\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+spent\\s+using\\s+ICICI\\s+Bank\\s+Card\\s+[xX*]*(?<account>\\d{4})\\s+on\\s+(?<date>\\d{2}-[A-Za-z]{3}-\\d{2})\\s+on\\s+(?<payee>.+?)\\.\\s*Avl\\s+Limit:\\s*INR\\s*(?<limit>[\\d,]+(?:\\.\\d+)?)",
+        "date_format": "dd-MMM-yy"
+      },
+      {
+        "id": "icici_account_credit",
+        "type": "neft",
+        "direction": "credit",
+        "regex": "(?i)ICICI\\s+Bank\\s+Account\\s+[xX*]*(?<account>\\d{3,6})\\s+credited:\\s*Rs\\.?\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+on\\s+(?<date>\\d{2}-[A-Za-z]{3}-\\d{2})\\.\\s*Info\\s+(?:(?:NEFT|IMPS|RTGS)-)?(?:[A-Z0-9]{8,}-)?(?<payee>[^.]+?)\\.\\s*Available\\s+Balance\\s+is\\s+Rs\\.?\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+        "date_format": "dd-MMM-yy",
+        "type_overrides": [
+          {
+            "when": "(?i)salary|\\bsal\\b",
+            "type": "salary"
+          },
+          {
+            "when": "(?i)Info\\s+IMPS",
+            "type": "imps"
+          }
+        ]
+      },
+      {
+        "id": "icici_account_debit",
+        "type": "other",
+        "direction": "debit",
+        "regex": "(?i)ICICI\\s+Bank\\s+Account\\s+[xX*]*(?<account>\\d{3,6})\\s+debited:\\s*Rs\\.?\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+on\\s+(?<date>\\d{2}-[A-Za-z]{3}-\\d{2})\\.\\s*Info\\s+(?:(?:N?ACH|BIL|ATM|NEFT|IMPS)[*/-])?(?<payee>[^.*]+)[^.]*\\.\\s*Available\\s+Balance\\s+is\\s+Rs\\.?\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+        "date_format": "dd-MMM-yy",
+        "type_overrides": [
+          {
+            "when": "(?i)Info\\s+N?ACH",
+            "type": "auto_debit"
+          },
+          {
+            "when": "(?i)Info\\s+ATM",
+            "type": "atm"
+          },
+          {
+            "when": "(?i)Info\\s+NEFT",
+            "type": "neft"
+          },
+          {
+            "when": "(?i)Info\\s+IMPS",
+            "type": "imps"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "bank": "State Bank of India",
+    "code": "sbi",
+    "senders": [
+      "SBIUPI",
+      "SBIINB",
+      "SBIPSG",
+      "CBSSBI",
+      "ATMSBI",
+      "SBMSMS"
+    ],
+    "ignore": [
+      {
+        "pattern": "(?i)\\bOTP\\b|one.time.password",
+        "reason": "otp"
+      },
+      {
+        "pattern": "(?i)\\b(declined|failed|unsuccessful)\\b",
+        "reason": "failed"
+      },
+      {
+        "pattern": "(?i)will be debited|is due on|due date",
+        "reason": "other"
+      },
+      {
+        "pattern": "(?i)^(?![\\s\\S]*\\b(debited|credited|spent|sent)\\b)[\\s\\S]*(pre-?approved|apply now|offer|yono cash)",
+        "reason": "promo"
+      },
+      {
+        "pattern": "(?i)^(?![\\s\\S]*(debited|credited))[\\s\\S]*(avl|available)\\.?\\s*bal",
+        "reason": "balance"
+      }
+    ],
+    "patterns": [
+      {
+        "id": "sbi_upi_debit",
+        "type": "upi",
+        "direction": "debit",
+        "regex": "(?i)A/C\\s+[xX*]*(?<account>\\d{3,6})\\s+debited\\s+by\\s+(?:Rs\\.?\\s*)?(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+on\\s+date\\s+(?<date>\\d{1,2}[A-Za-z]{3}\\d{2})\\s+trf\\s+to\\s+(?<payee>.+?)\\s+Ref\\s*no\\s+(?<ref>\\d+)",
+        "date_format": "dMMMyy"
+      },
+      {
+        "id": "sbi_upi_credit",
+        "type": "upi",
+        "direction": "credit",
+        "regex": "(?i)A/c\\s*[xX*]*(?<account>\\d{3,6})[\\s-]+credited\\s+by\\s+Rs\\.?\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+on\\s+(?<date>\\d{1,2}[A-Za-z]{3}\\d{2})\\s+(?:transfer\\s+from|by)\\s+(?<payee>[^(]*?)\\s*\\(?Ref\\s*no\\s+(?<ref>\\d+)",
+        "date_format": "dMMMyy"
+      },
+      {
+        "id": "sbi_account_debit",
+        "type": "other",
+        "direction": "debit",
+        "regex": "(?i)A/C\\s+[xX*]*(?<account>\\d{3,6})\\s+Debited\\s+INR\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+on\\s+(?<date>\\d{2}/\\d{2}/\\d{2})\\s*-\\s*(?:Transferred\\s+to\\s+)?(?<payee>[^.]+?)\\.\\s*Avl\\s+Bal(?:ance)?\\s+INR\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+        "date_format": "dd/MM/yy",
+        "type_overrides": [
+          {
+            "when": "(?i)\\b(N?ACH|ECS)\\b",
+            "type": "auto_debit"
+          },
+          {
+            "when": "(?i)\\bATM\\b",
+            "type": "atm"
+          }
+        ]
+      },
+      {
+        "id": "sbi_account_credit",
+        "type": "neft",
+        "direction": "credit",
+        "regex": "(?i)A/C\\s+[xX*]*(?<account>\\d{3,6})\\s+Credited\\s+INR\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+on\\s+(?<date>\\d{2}/\\d{2}/\\d{2})\\s*-\\s*(?:Deposit\\s+by\\s+transfer\\s+from\\s+)?(?<payee>[^.]+?)\\.\\s*Avl\\s+Bal(?:ance)?\\s+INR\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+        "date_format": "dd/MM/yy",
+        "type_overrides": [
+          {
+            "when": "(?i)salary|\\bsal\\b",
+            "type": "salary"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,57 @@
+- name: UPI payment
+  sender: VM-AXISBK-S
+  body: |-
+    INR 450.00 debited
+    A/c no. XX7710
+    18-09-25, 14:22:10
+    UPI/P2M/999112345678/SWIGGY
+    Not you? SMS BLOCKUPI Cust ID to 919951860002
+    Axis Bank
+  expect: {status: parsed, pattern: axis_upi_debit, type: upi, direction: debit, amount: 450, account: '7710', payee: SWIGGY, ref: '999112345678', date: '2025-09-18', time: '14:22'}
+
+- name: UPI credit
+  sender: VM-AXISBK
+  body: |-
+    INR 5000.00 credited
+    A/c no. XX7710
+    18-09-25, 09:05:00 IST
+    UPI/P2A/999112345679/RAKESH KUMAR
+    Axis Bank
+  expect: {status: parsed, pattern: axis_upi_credit, type: upi, direction: credit, amount: 5000, account: '7710', payee: RAKESH KUMAR, ref: '999112345679', date: '2025-09-18', time: '09:05'}
+
+- name: Credit card spend
+  sender: VM-AXISBK
+  body: |-
+    Spent
+    Card no. XX4455
+    INR 1299
+    18-09-25 14:22:10
+    AMAZON
+    Avl Lmt INR 145000
+    SMS BLOCK 4455 to 919951860002, if not you - Axis Bank
+  expect: {status: parsed, pattern: axis_card_spend, type: credit_card, direction: debit, amount: 1299, account: '4455', account_kind: card, payee: AMAZON, limit: 145000, date: '2025-09-18'}
+
+- name: ACH debit
+  sender: VM-AXISBK
+  body: |-
+    INR 10000.00 debited
+    A/c no. XX7710
+    05-09-25, 09:10:00
+    ACH-DR/BAJAJ FINANCE/P400
+    Axis Bank
+  expect: {status: parsed, pattern: axis_account_debit, type: auto_debit, direction: debit, amount: 10000, account: '7710', payee: BAJAJ FINANCE, date: '2025-09-05'}
+
+- name: Promotional message is ignored
+  sender: VM-AXISBN
+  body: 'Get a pre-approved Axis Bank Credit Card with zero joining fee. Apply now: axisbank.com/cc'
+  expect: {status: ignored, reason: promo}
+
+- name: Salary NEFT credit
+  sender: VM-AXISBK
+  body: |-
+    INR 100000.00 credited
+    A/c no. XX7710
+    01-09-25, 10:15:00 IST
+    NEFT/ACME0000123/ACME TECHNOLOGIES SALARY
+    Axis Bank
+  expect: {status: parsed, pattern: axis_account_credit, type: salary, direction: credit, amount: 100000, account: '7710', payee: ACME TECHNOLOGIES SALARY, date: '2025-09-01'}

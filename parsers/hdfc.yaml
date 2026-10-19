@@ -1,0 +1,47 @@
+# HDFC Bank. Formats taken from publicly shared examples; verify against real
+# masked samples before relying on them (see docs/parser-guide.md).
+bank: HDFC Bank
+code: hdfc
+senders: [HDFCBK, HDFCBN]
+ignore:
+  - {pattern: '(?i)\bOTP\b|one.time.password', reason: otp}
+  - {pattern: '(?i)\b(declined|failed|unsuccessful|reversal initiated)\b', reason: failed}
+  - {pattern: '(?i)will be debited|is due on|due date|e-?mandate.*(registered|created)', reason: other}
+  - {pattern: '(?i)^(?![\s\S]*\b(debited|credited|spent|sent)\b)[\s\S]*(pre-?approved|apply now|offer|limit increase|cashback of up to)', reason: promo}
+  - {pattern: '(?i)^(?![\s\S]*(debited|credited|spent|sent|deposited|withdrawn|received))[\s\S]*(avl|available)\.?\s*bal', reason: balance}
+patterns:
+  - id: hdfc_upi_sent
+    type: upi
+    direction: debit
+    regex: '(?i)Sent\s+Rs\.?\s*(?<amount>[\d,]+(?:\.\d+)?)\s+From\s+HDFC\s+Bank\s+A/?C\s+[*xX]*(?<account>\d{3,6})\s+To\s+(?<payee>.+?)\s+On\s+(?<date>\d{2}/\d{2}/\d{2})\s+Ref\s+(?<ref>\d+)'
+    date_format: dd/MM/yy
+  - id: hdfc_upi_credit
+    type: upi
+    direction: credit
+    regex: '(?i)Rs\.?\s*(?<amount>[\d,]+(?:\.\d+)?)\s+credited\s+to\s+HDFC\s+Bank\s+A/c\s+[xX*]*(?<account>\d{3,6})\s+on\s+(?<date>\d{2}-\d{2}-\d{2})\s+from\s+VPA\s+(?<payee>\S+)\s+\(UPI\s+(?<ref>\d+)\)'
+    date_format: dd-MM-yy
+  - id: hdfc_card_spend
+    type: credit_card
+    direction: debit
+    account_kind: card
+    regex: '(?i)Spent\s+Rs\.?\s*(?<amount>[\d,]+(?:\.\d+)?)\s+On\s+HDFC\s+Bank\s+Card\s+[xX*]*(?<account>\d{4})\s+At\s+(?<payee>.+?)\s+On\s+(?<date>\d{4}-\d{2}-\d{2}):(?<time>\d{2}:\d{2}:\d{2})'
+    date_format: yyyy-MM-dd
+  - id: hdfc_deposit
+    type: neft
+    direction: credit
+    regex: '(?i)INR\s*(?<amount>[\d,]+(?:\.\d+)?)\s+deposited\s+in\s+HDFC\s+Bank\s+A/c\s+[xX*]*(?<account>\d{3,6})\s+on\s+(?<date>\d{2}-[A-Za-z]{3}-\d{2})\s+for\s+(?:NEFT|IMPS|RTGS)?\s*Cr-(?:[A-Z0-9]{8,}-)?(?<payee>[^-.]+)[^.]*\.\s*Avl\s+bal:?\s*INR\s*(?<balance>[\d,]+(?:\.\d+)?)'
+    date_format: dd-MMM-yy
+    type_overrides:
+      - {when: '(?i)salary|\bsal\b', type: salary}
+      - {when: '(?i)for\s+IMPS', type: imps}
+      - {when: '(?i)for\s+RTGS', type: rtgs}
+  - id: hdfc_debit_update
+    type: other
+    direction: debit
+    regex: '(?i)INR\s*(?<amount>[\d,]+(?:\.\d+)?)\s+debited\s+from\s+HDFC\s+Bank\s+(?:A/c\s+)?[xX*]*(?<account>\d{3,6})\s+on\s+(?<date>\d{2}-[A-Za-z]{3}-\d{2})\.\s*Info:\s*(?:(?:N?ACH|ECS)\s*D-\s*)?(?<payee>[^-.]+)[^.]*\.\s*Avl\s+bal:?\s*INR\s*(?<balance>[\d,]+(?:\.\d+)?)'
+    date_format: dd-MMM-yy
+    type_overrides:
+      - {when: '(?i)\b(N?ACH|ECS)\b', type: auto_debit}
+      - {when: '(?i)\bATM\b', type: atm}
+      - {when: '(?i)\bNEFT\b', type: neft}
+      - {when: '(?i)\bIMPS\b', type: imps}

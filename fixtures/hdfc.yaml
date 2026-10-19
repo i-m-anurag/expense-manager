@@ -1,0 +1,61 @@
+- name: UPI payment to a merchant
+  sender: VM-HDFCBK-S
+  body: |-
+    Sent Rs.450.00
+    From HDFC Bank A/C *4521
+    To SWIGGY
+    On 18/09/25
+    Ref 999112345678
+    Not You?
+    Call 18002586161/SMS BLOCK UPI to 7308080808
+  expect: {status: parsed, pattern: hdfc_upi_sent, type: upi, direction: debit, amount: 450, account: '4521', payee: SWIGGY, merchant_key: swiggy, ref: '999112345678', date: '2025-09-18'}
+
+- name: UPI credit from a person
+  sender: AD-HDFCBK
+  body: 'Credit Alert! Rs.500.00 credited to HDFC Bank A/c XX4521 on 18-09-25 from VPA rakesh.kumar@okicici (UPI 999112345679)'
+  expect: {status: parsed, pattern: hdfc_upi_credit, type: upi, direction: credit, amount: 500, account: '4521', payee: rakesh.kumar@okicici, merchant_key: rakeshkumar, ref: '999112345679', date: '2025-09-18'}
+
+- name: Credit card spend
+  sender: JD-HDFCBK-T
+  body: 'Spent Rs.1299 On HDFC Bank Card 1123 At AMAZON PAY INDIA On 2025-09-18:14:22:10.Not You? To Block+Reissue Call 18002586161/SMS BLOCK CC 1123 to 7308080808'
+  expect: {status: parsed, pattern: hdfc_card_spend, type: credit_card, direction: debit, amount: 1299, account: '1123', account_kind: card, payee: AMAZON PAY INDIA, merchant_key: amazon, date: '2025-09-18', time: '14:22'}
+
+- name: Salary via NEFT
+  sender: VM-HDFCBK
+  body: 'Update! INR 1,00,000.00 deposited in HDFC Bank A/c XX4521 on 01-SEP-25 for NEFT Cr-ACME0000123-ACME TECHNOLOGIES PVT LTD-SALARY SEP 2025.Avl bal INR 1,23,456.78. Cheque deposits in A/C are subject to clearing'
+  expect: {status: parsed, pattern: hdfc_deposit, type: salary, direction: credit, amount: 100000, account: '4521', payee: ACME TECHNOLOGIES PVT LTD, balance: 123456.78, date: '2025-09-01'}
+
+- name: EMI auto-debit (ACH)
+  sender: VM-HDFCBK
+  body: 'Update! INR 10,000.00 debited from HDFC Bank XX4521 on 05-SEP-25. Info: ACH D- BAJAJ FINANCE LTD-P400XXXX. Avl bal:INR 45,000.00'
+  expect: {status: parsed, pattern: hdfc_debit_update, type: auto_debit, direction: debit, amount: 10000, account: '4521', payee: BAJAJ FINANCE LTD, merchant_key: bajajfinance, balance: 45000, date: '2025-09-05'}
+
+- name: OTP is ignored
+  sender: VM-HDFCBK
+  body: '999123 is the OTP for your HDFC Bank NetBanking login. Do not share it with anyone.'
+  expect: {status: ignored, reason: otp}
+
+- name: Declined card transaction is ignored
+  sender: VM-HDFCBK
+  body: 'Your HDFC Bank Card 1123 transaction of Rs.2500 at FLIPKART was declined due to insufficient limit.'
+  expect: {status: ignored, reason: failed}
+
+- name: Upcoming mandate reminder is ignored
+  sender: VM-HDFCBK
+  body: 'Rs.5000.00 will be debited from HDFC Bank A/c XX4521 on 10-10-25 towards HDFC MF SIP. Ensure sufficient balance.'
+  expect: {status: ignored, reason: other}
+
+- name: Loan offer is ignored
+  sender: VM-HDFCBN
+  body: 'Congratulations! You have a pre-approved Personal Loan of Rs.5,00,000. Apply now in 2 clicks.'
+  expect: {status: ignored, reason: promo}
+
+- name: Unknown format from a bank sender goes to the unparsed inbox
+  sender: VM-HDFCBK
+  body: 'Dear Customer, Rs.300 has been transferred via NetBanking to Beneficiary XX9876 on 18/09/25.'
+  expect: {status: unparsed}
+
+- name: Personal message is not a bank SMS
+  sender: '9990001111'
+  body: 'Hey, dinner at 8 tonight?'
+  expect: {status: not_bank}

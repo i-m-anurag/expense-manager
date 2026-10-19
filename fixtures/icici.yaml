@@ -1,0 +1,29 @@
+- name: UPI payment
+  sender: VM-ICICIB-S
+  body: 'ICICI Bank Acct XX123 debited for Rs 450.00 on 18-Sep-25; SWIGGY credited. UPI:999112345678. Call 18002662 for dispute. SMS BLOCK 123 to 9215676766.'
+  expect: {status: parsed, pattern: icici_upi_debit, type: upi, direction: debit, amount: 450, account: '123', payee: SWIGGY, ref: '999112345678', date: '2025-09-18'}
+
+- name: UPI credit
+  sender: AX-ICICIB
+  body: 'Dear Customer, Acct XX123 is credited with Rs 500.00 on 18-Sep-25 from RAKESH KUMAR. UPI:999112345679-ICICI Bank.'
+  expect: {status: parsed, pattern: icici_upi_credit, type: upi, direction: credit, amount: 500, account: '123', payee: RAKESH KUMAR, ref: '999112345679', date: '2025-09-18'}
+
+- name: Credit card spend
+  sender: VM-ICICIT
+  body: 'INR 1,299.00 spent using ICICI Bank Card XX1123 on 18-Sep-25 on AMAZON. Avl Limit: INR 1,45,000.00. If not you, call 1800 2662/SMS BLOCK 1123 to 9215676766'
+  expect: {status: parsed, pattern: icici_card_spend, type: credit_card, direction: debit, amount: 1299, account: '1123', account_kind: card, payee: AMAZON, limit: 145000, date: '2025-09-18'}
+
+- name: Salary NEFT credit
+  sender: VM-ICICIB
+  body: 'ICICI Bank Account XX123 credited:Rs. 1,00,000.00 on 01-Sep-25. Info NEFT-ACME0000123-ACME TECH SALARY. Available Balance is Rs. 1,23,456.78.'
+  expect: {status: parsed, pattern: icici_account_credit, type: salary, direction: credit, amount: 100000, account: '123', payee: ACME TECH SALARY, balance: 123456.78, date: '2025-09-01'}
+
+- name: ACH debit
+  sender: VM-ICICIB
+  body: 'ICICI Bank Account XX123 debited:Rs. 10,000.00 on 05-Sep-25. Info ACH*BAJAJ FINANCE*P400. Available Balance is Rs. 45,000.00.'
+  expect: {status: parsed, pattern: icici_account_debit, type: auto_debit, direction: debit, amount: 10000, account: '123', payee: BAJAJ FINANCE, balance: 45000, date: '2025-09-05'}
+
+- name: OTP is ignored
+  sender: VM-ICICIT
+  body: '999456 is OTP for txn of INR 1,299.00 at AMAZON on ICICI Bank card XX1123. OTPs are SECRET. DO NOT share.'
+  expect: {status: ignored, reason: otp}

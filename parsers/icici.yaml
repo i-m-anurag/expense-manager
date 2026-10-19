@@ -1,0 +1,46 @@
+# ICICI Bank. Formats taken from publicly shared examples; verify against real
+# masked samples before relying on them (see docs/parser-guide.md).
+bank: ICICI Bank
+code: icici
+senders: [ICICIB, ICICIT]
+ignore:
+  - {pattern: '(?i)\bOTP\b|one.time.password', reason: otp}
+  - {pattern: '(?i)\b(declined|failed|unsuccessful)\b', reason: failed}
+  - {pattern: '(?i)will be debited|is due on|due date|mandate.*(registered|created)', reason: other}
+  - {pattern: '(?i)^(?![\s\S]*\b(debited|credited|spent|sent)\b)[\s\S]*(pre-?approved|apply now|offer|limit increase)', reason: promo}
+  - {pattern: '(?i)^(?![\s\S]*(debited|credited|spent))[\s\S]*(avl|available)\.?\s*(bal|limit)', reason: balance}
+patterns:
+  - id: icici_upi_debit
+    type: upi
+    direction: debit
+    regex: '(?i)ICICI\s+Bank\s+Acc(?:oun)?t\s+[xX*]*(?<account>\d{3,6})\s+debited\s+for\s+Rs\.?\s*(?<amount>[\d,]+(?:\.\d+)?)\s+on\s+(?<date>\d{2}-[A-Za-z]{3}-\d{2});\s*(?<payee>.+?)\s+credited\.\s*UPI:(?<ref>\d+)'
+    date_format: dd-MMM-yy
+  - id: icici_upi_credit
+    type: upi
+    direction: credit
+    regex: '(?i)Acc(?:oun)?t\s+[xX*]*(?<account>\d{3,6})\s+is\s+credited\s+with\s+Rs\.?\s*(?<amount>[\d,]+(?:\.\d+)?)\s+on\s+(?<date>\d{2}-[A-Za-z]{3}-\d{2})\s+from\s+(?<payee>.+?)\.\s*UPI:(?<ref>\d+)'
+    date_format: dd-MMM-yy
+  - id: icici_card_spend
+    type: credit_card
+    direction: debit
+    account_kind: card
+    regex: '(?i)INR\s*(?<amount>[\d,]+(?:\.\d+)?)\s+spent\s+using\s+ICICI\s+Bank\s+Card\s+[xX*]*(?<account>\d{4})\s+on\s+(?<date>\d{2}-[A-Za-z]{3}-\d{2})\s+on\s+(?<payee>.+?)\.\s*Avl\s+Limit:\s*INR\s*(?<limit>[\d,]+(?:\.\d+)?)'
+    date_format: dd-MMM-yy
+  - id: icici_account_credit
+    type: neft
+    direction: credit
+    regex: '(?i)ICICI\s+Bank\s+Account\s+[xX*]*(?<account>\d{3,6})\s+credited:\s*Rs\.?\s*(?<amount>[\d,]+(?:\.\d+)?)\s+on\s+(?<date>\d{2}-[A-Za-z]{3}-\d{2})\.\s*Info\s+(?:(?:NEFT|IMPS|RTGS)-)?(?:[A-Z0-9]{8,}-)?(?<payee>[^.]+?)\.\s*Available\s+Balance\s+is\s+Rs\.?\s*(?<balance>[\d,]+(?:\.\d+)?)'
+    date_format: dd-MMM-yy
+    type_overrides:
+      - {when: '(?i)salary|\bsal\b', type: salary}
+      - {when: '(?i)Info\s+IMPS', type: imps}
+  - id: icici_account_debit
+    type: other
+    direction: debit
+    regex: '(?i)ICICI\s+Bank\s+Account\s+[xX*]*(?<account>\d{3,6})\s+debited:\s*Rs\.?\s*(?<amount>[\d,]+(?:\.\d+)?)\s+on\s+(?<date>\d{2}-[A-Za-z]{3}-\d{2})\.\s*Info\s+(?:(?:N?ACH|BIL|ATM|NEFT|IMPS)[*/-])?(?<payee>[^.*]+)[^.]*\.\s*Available\s+Balance\s+is\s+Rs\.?\s*(?<balance>[\d,]+(?:\.\d+)?)'
+    date_format: dd-MMM-yy
+    type_overrides:
+      - {when: '(?i)Info\s+N?ACH', type: auto_debit}
+      - {when: '(?i)Info\s+ATM', type: atm}
+      - {when: '(?i)Info\s+NEFT', type: neft}
+      - {when: '(?i)Info\s+IMPS', type: imps}

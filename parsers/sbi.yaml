@@ -1,0 +1,37 @@
+# State Bank of India. Formats taken from publicly shared examples; verify
+# against real masked samples before relying on them (see docs/parser-guide.md).
+bank: State Bank of India
+code: sbi
+senders: [SBIUPI, SBIINB, SBIPSG, CBSSBI, ATMSBI, SBMSMS]
+ignore:
+  - {pattern: '(?i)\bOTP\b|one.time.password', reason: otp}
+  - {pattern: '(?i)\b(declined|failed|unsuccessful)\b', reason: failed}
+  - {pattern: '(?i)will be debited|is due on|due date', reason: other}
+  - {pattern: '(?i)^(?![\s\S]*\b(debited|credited|spent|sent)\b)[\s\S]*(pre-?approved|apply now|offer|yono cash)', reason: promo}
+  - {pattern: '(?i)^(?![\s\S]*(debited|credited))[\s\S]*(avl|available)\.?\s*bal', reason: balance}
+patterns:
+  - id: sbi_upi_debit
+    type: upi
+    direction: debit
+    regex: '(?i)A/C\s+[xX*]*(?<account>\d{3,6})\s+debited\s+by\s+(?:Rs\.?\s*)?(?<amount>[\d,]+(?:\.\d+)?)\s+on\s+date\s+(?<date>\d{1,2}[A-Za-z]{3}\d{2})\s+trf\s+to\s+(?<payee>.+?)\s+Ref\s*no\s+(?<ref>\d+)'
+    date_format: dMMMyy
+  - id: sbi_upi_credit
+    type: upi
+    direction: credit
+    regex: '(?i)A/c\s*[xX*]*(?<account>\d{3,6})[\s-]+credited\s+by\s+Rs\.?\s*(?<amount>[\d,]+(?:\.\d+)?)\s+on\s+(?<date>\d{1,2}[A-Za-z]{3}\d{2})\s+(?:transfer\s+from|by)\s+(?<payee>[^(]*?)\s*\(?Ref\s*no\s+(?<ref>\d+)'
+    date_format: dMMMyy
+  - id: sbi_account_debit
+    type: other
+    direction: debit
+    regex: '(?i)A/C\s+[xX*]*(?<account>\d{3,6})\s+Debited\s+INR\s*(?<amount>[\d,]+(?:\.\d+)?)\s+on\s+(?<date>\d{2}/\d{2}/\d{2})\s*-\s*(?:Transferred\s+to\s+)?(?<payee>[^.]+?)\.\s*Avl\s+Bal(?:ance)?\s+INR\s*(?<balance>[\d,]+(?:\.\d+)?)'
+    date_format: dd/MM/yy
+    type_overrides:
+      - {when: '(?i)\b(N?ACH|ECS)\b', type: auto_debit}
+      - {when: '(?i)\bATM\b', type: atm}
+  - id: sbi_account_credit
+    type: neft
+    direction: credit
+    regex: '(?i)A/C\s+[xX*]*(?<account>\d{3,6})\s+Credited\s+INR\s*(?<amount>[\d,]+(?:\.\d+)?)\s+on\s+(?<date>\d{2}/\d{2}/\d{2})\s*-\s*(?:Deposit\s+by\s+transfer\s+from\s+)?(?<payee>[^.]+?)\.\s*Avl\s+Bal(?:ance)?\s+INR\s*(?<balance>[\d,]+(?:\.\d+)?)'
+    date_format: dd/MM/yy
+    type_overrides:
+      - {when: '(?i)salary|\bsal\b', type: salary}

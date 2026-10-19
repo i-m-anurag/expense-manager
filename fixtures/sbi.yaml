@@ -1,0 +1,24 @@
+- name: UPI payment
+  sender: VM-SBIUPI
+  body: 'Dear UPI user A/C X8830 debited by 450.0 on date 18Sep25 trf to SWIGGY Refno 999112345678. If not u? call 1800111109. -SBI'
+  expect: {status: parsed, pattern: sbi_upi_debit, type: upi, direction: debit, amount: 450, account: '8830', payee: SWIGGY, ref: '999112345678', date: '2025-09-18'}
+
+- name: UPI credit
+  sender: AD-SBIUPI-S
+  body: 'Dear SBI UPI User, ur A/cX8830 credited by Rs500 on 18Sep25 by  (Ref no 999112345679)'
+  expect: {status: parsed, pattern: sbi_upi_credit, type: upi, direction: credit, amount: 500, account: '8830', ref: '999112345679', date: '2025-09-18'}
+
+- name: Account debit by transfer
+  sender: VM-CBSSBI
+  body: 'Your A/C XXXXX8830 Debited INR 10,000.00 on 05/09/25 -Transferred to BAJAJ FINANCE. Avl Balance INR 45,000.00-SBI'
+  expect: {status: parsed, pattern: sbi_account_debit, type: other, direction: debit, amount: 10000, account: '8830', payee: BAJAJ FINANCE, balance: 45000, date: '2025-09-05'}
+
+- name: Account credit
+  sender: VM-CBSSBI
+  body: 'Your A/C XXXXX8830 Credited INR 25,000.00 on 03/09/25 -Deposit by transfer from ANITA SHARMA. Avl Bal INR 70,000.00-SBI'
+  expect: {status: parsed, pattern: sbi_account_credit, type: neft, direction: credit, amount: 25000, account: '8830', payee: ANITA SHARMA, balance: 70000, date: '2025-09-03'}
+
+- name: OTP is ignored
+  sender: VM-SBIINB
+  body: 'OTP for online purchase of Rs. 450.00 at SWIGGY thru State Bank Debit Card 1234 is 999789. Do not share this with anyone.'
+  expect: {status: ignored, reason: otp}

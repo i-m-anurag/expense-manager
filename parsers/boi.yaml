@@ -1,0 +1,22 @@
+# Bank of India. Formats taken from publicly shared examples; verify against
+# real masked samples before relying on them (see docs/parser-guide.md).
+bank: Bank of India
+code: boi
+senders: [BOIIND, BOISMS, BOIUPI]
+ignore:
+  - {pattern: '(?i)\bOTP\b|one.time.password', reason: otp}
+  - {pattern: '(?i)\b(declined|failed|unsuccessful)\b', reason: failed}
+  - {pattern: '(?i)will be debited|is due on|due date', reason: other}
+  - {pattern: '(?i)^(?![\s\S]*\b(debited|credited|spent|sent)\b)[\s\S]*(pre-?approved|apply now|offer)', reason: promo}
+  - {pattern: '(?i)^(?![\s\S]*(debited|credited))[\s\S]*(avl|available)\.?\s*bal', reason: balance}
+patterns:
+  - id: boi_upi_debit
+    type: upi
+    direction: debit
+    regex: '(?i)Rs\.?\s*(?<amount>[\d,]+(?:\.\d+)?)\s+debited\s+A/c\s*[xX*]*(?<account>\d{3,6})\s+and\s+credited\s+to\s+(?<payee>.+?)\s+via\s+UPI\s+Ref\s+No\.?\s*(?<ref>\d+)\s+on\s+(?<date>\d{1,2}[A-Za-z]{3}\d{2})'
+    date_format: dMMMyy
+  - id: boi_upi_credit
+    type: upi
+    direction: credit
+    regex: '(?i)Rs\.?\s*(?<amount>[\d,]+(?:\.\d+)?)\s+Credited\s+to\s+your\s+A/?c\s*[xX*]*(?<account>\d{3,6})\s+on\s+(?<date>\d{2}-\d{2}-\d{2})\s+by\s+UPI\s+ref\s+No\.?\s*(?<ref>\d+)\.?\s*Avl\s+Bal\s+(?<balance>[\d,]+(?:\.\d+)?)'
+    date_format: dd-MM-yy

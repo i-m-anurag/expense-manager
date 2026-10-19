@@ -1,0 +1,14 @@
+- name: UPI payment
+  sender: VM-BOIIND
+  body: 'Rs.450.00 debited A/c XX1234 and credited to SWIGGY via UPI Ref No 999112345678 on 18Sep25. Call 18001031906, if not done by you. -Bank of India'
+  expect: {status: parsed, pattern: boi_upi_debit, type: upi, direction: debit, amount: 450, account: '1234', payee: SWIGGY, ref: '999112345678', date: '2025-09-18'}
+
+- name: UPI credit
+  sender: AD-BOIIND
+  body: 'BOI - Rs 500.00 Credited to your Ac XX1234 on 18-09-25 by UPI ref No.999112345679.Avl Bal 12345.00'
+  expect: {status: parsed, pattern: boi_upi_credit, type: upi, direction: credit, amount: 500, account: '1234', ref: '999112345679', balance: 12345, date: '2025-09-18'}
+
+- name: Failed transaction is ignored
+  sender: VM-BOIIND
+  body: 'Your UPI transaction of Rs.450.00 to SWIGGY has failed. Amount if debited will be reversed. -Bank of India'
+  expect: {status: ignored, reason: failed}

@@ -1,0 +1,46 @@
+# Axis Bank. Formats taken from publicly shared examples; verify against real
+# masked samples before relying on them (see docs/parser-guide.md).
+bank: Axis Bank
+code: axis
+senders: [AXISBK, AXISBN]
+ignore:
+  - {pattern: '(?i)\bOTP\b|one.time.password', reason: otp}
+  - {pattern: '(?i)\b(declined|failed|unsuccessful)\b', reason: failed}
+  - {pattern: '(?i)will be debited|is due on|due date', reason: other}
+  - {pattern: '(?i)^(?![\s\S]*\b(debited|credited|spent|sent)\b)[\s\S]*(pre-?approved|apply now|offer)', reason: promo}
+  - {pattern: '(?i)^(?![\s\S]*(debited|credited|spent))[\s\S]*(avl|available)\.?\s*(bal|lmt|limit)', reason: balance}
+patterns:
+  - id: axis_upi_debit
+    type: upi
+    direction: debit
+    regex: '(?i)INR\s*(?<amount>[\d,]+(?:\.\d+)?)\s+debited\s+A/c\s+no\.\s*[xX*]*(?<account>\d{3,6})\s+(?<date>\d{2}-\d{2}-\d{2}),?\s+(?<time>\d{2}:\d{2}(?::\d{2})?)(?:\s*IST)?\s+UPI/P2[AM]/(?<ref>\d+)/(?<payee>[^\n]+)'
+    date_format: dd-MM-yy
+  - id: axis_upi_credit
+    type: upi
+    direction: credit
+    regex: '(?i)INR\s*(?<amount>[\d,]+(?:\.\d+)?)\s+credited\s+A/c\s+no\.\s*[xX*]*(?<account>\d{3,6})\s+(?<date>\d{2}-\d{2}-\d{2}),?\s+(?<time>\d{2}:\d{2}(?::\d{2})?)(?:\s*IST)?\s+UPI/P2[AM]/(?<ref>\d+)/(?<payee>[^\n]+)'
+    date_format: dd-MM-yy
+  - id: axis_card_spend
+    type: credit_card
+    direction: debit
+    account_kind: card
+    regex: '(?i)Spent\s+Card\s+no\.\s*[xX*]*(?<account>\d{4})\s+INR\s*(?<amount>[\d,]+(?:\.\d+)?)\s+(?<date>\d{2}-\d{2}-\d{2}),?\s+(?<time>\d{2}:\d{2}(?::\d{2})?)\s+(?<payee>[^\n]+)\s+Avl\s+Lmt\s+INR\s*(?<limit>[\d,]+(?:\.\d+)?)'
+    date_format: dd-MM-yy
+  - id: axis_account_debit
+    type: other
+    direction: debit
+    regex: '(?i)INR\s*(?<amount>[\d,]+(?:\.\d+)?)\s+debited\s+A/c\s+no\.\s*[xX*]*(?<account>\d{3,6})\s+(?<date>\d{2}-\d{2}-\d{2}),?\s+(?<time>\d{2}:\d{2}(?::\d{2})?)(?:\s*IST)?\s+(?:(?:N?ACH-DR|NEFT|IMPS|ATM-WDL)/)?(?<payee>[^/\n]+)'
+    date_format: dd-MM-yy
+    type_overrides:
+      - {when: '(?i)N?ACH-DR', type: auto_debit}
+      - {when: '(?i)ATM', type: atm}
+      - {when: '(?i)\bNEFT/', type: neft}
+      - {when: '(?i)\bIMPS/', type: imps}
+  - id: axis_account_credit
+    type: neft
+    direction: credit
+    regex: '(?i)INR\s*(?<amount>[\d,]+(?:\.\d+)?)\s+credited\s+A/c\s+no\.\s*[xX*]*(?<account>\d{3,6})\s+(?<date>\d{2}-\d{2}-\d{2}),?\s+(?<time>\d{2}:\d{2}(?::\d{2})?)(?:\s*IST)?\s+(?:(?:NEFT|IMPS|RTGS)/(?:[A-Z0-9]+/)?)?(?<payee>[^/\n]+)'
+    date_format: dd-MM-yy
+    type_overrides:
+      - {when: '(?i)salary|\bsal\b', type: salary}
+      - {when: '(?i)\bIMPS/', type: imps}

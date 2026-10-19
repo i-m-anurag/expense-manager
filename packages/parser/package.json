@@ -1,0 +1,23 @@
+{
+  "name": "@expense-manager/parser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turns Indian bank SMS into structured transactions. Platform-independent; runs in the app and in Node.",
+  "license": "GPL-3.0-only",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build:templates": "tsx scripts/build-templates.ts",
+    "check:templates": "tsx scripts/build-templates.ts --check",
+    "check:fixtures": "tsx scripts/check-fixtures-masked.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "ajv": "^8.20.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "yaml": "^2.9.1"
+  }
+}
