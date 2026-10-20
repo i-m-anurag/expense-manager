@@ -13,6 +13,23 @@ class MainActivity : ReactActivity() {
     super.onCreate(null)
   }
 
+  // Whether the user is looking at the app right now. Process importance
+  // can't tell: Android treats the process as foreground while it handles an
+  // SMS broadcast, which wrongly hid the payment pop-up.
+  override fun onResume() {
+    super.onResume()
+    visible = true
+  }
+
+  override fun onPause() {
+    visible = false
+    super.onPause()
+  }
+
+  companion object {
+    @Volatile var visible = false
+  }
+
   /**
    * Returns the name of the main component registered from JavaScript. This is used to schedule
    * rendering of the component.

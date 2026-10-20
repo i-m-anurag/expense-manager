@@ -116,6 +116,29 @@ export async function afterIngest(
   await scheduleReminders(sql, now);
 }
 
+// Settings → "Preview pop-up": the card with sample data, saving nothing.
+export async function previewPopup(theme: string) {
+  await Notifications.showPaymentOverlay({
+    preview: true,
+    saved: false,
+    txnId: 0,
+    notificationId: 0,
+    merchant: 'Swiggy',
+    amount: '₹450',
+    account: 'HDFC ••4521',
+    suggestion: 'Want · Food delivery',
+    suggestedId: 'want.food_delivery',
+    theme,
+    palettes: { dark: popupPalette('dark'), light: popupPalette('light') },
+    buckets: [
+      { id: 'need.other', label: 'Need', key: 'need' },
+      { id: 'want.other', label: 'Want', key: 'want' },
+      { id: 'investment.other', label: 'Investment', key: 'investment' },
+      { id: 'loan.other', label: 'Loan / EMI', key: 'loan' },
+    ],
+  });
+}
+
 // Native colours as #AARRGGBB (the tint is gold at 12% / 14%).
 function popupPalette(name: 'dark' | 'light') {
   const p = palettes[name];
@@ -149,13 +172,19 @@ async function maybePopup(
   const t = [...fresh]
     .reverse()
     .find(x => x && (everyPayment || !x.category_id));
-  if (
-    !t ||
-    inQuiet ||
-    !(await isOn(sql, 'popup_payments')) ||
-    !(await Notifications.canShowOverlay()) ||
-    (await Notifications.isAppInForeground())
-  ) {
+  const skip = !t
+    ? 'no payment to ask about'
+    : inQuiet
+    ? 'quiet hours'
+    : !(await isOn(sql, 'popup_payments'))
+    ? 'turned off in Settings'
+    : !(await Notifications.canShowOverlay())
+    ? 'no overlay permission'
+    : (await Notifications.isAppInForeground())
+    ? 'app is open'
+    : null;
+  if (skip || !t) {
+    console.log(`[ExpenseManager] pop-up skipped: ${skip}`);
     return;
   }
   const theme = (await getSetting(sql, 'theme')) ?? 'system';

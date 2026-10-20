@@ -1,6 +1,5 @@
 package com.expensemanager.notify
 
-import android.app.ActivityManager
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Intent
@@ -83,9 +82,7 @@ class NotificationsModule(private val context: ReactApplicationContext) :
   // The pop-up is only for when the user is in another app.
   @ReactMethod
   fun isAppInForeground(promise: Promise) {
-    val info = ActivityManager.RunningAppProcessInfo()
-    ActivityManager.getMyMemoryState(info)
-    promise.resolve(info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+    promise.resolve(com.expensemanager.MainActivity.visible)
   }
 
   @ReactMethod

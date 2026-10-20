@@ -13,6 +13,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
@@ -40,6 +41,7 @@ import kotlin.math.abs
 object PaymentOverlay {
   private const val AUTO_HIDE_MS = 20_000L
   private const val UNDO_MS = 3_000L
+  private const val TAG = "ExpenseManager"
 
   private var current: View? = null
   private val main = Handler(Looper.getMainLooper())
@@ -56,7 +58,10 @@ object PaymentOverlay {
 
   @SuppressLint("ClickableViewAccessibility")
   private fun showOnMain(ctx: Context, spec: JSONObject) {
-    if (!canShow(ctx)) return
+    if (!canShow(ctx)) {
+      Log.i(TAG, "Pop-up skipped: no overlay permission")
+      return
+    }
     remove(ctx, animate = false)
     val wm = ctx.getSystemService(WindowManager::class.java)
 
@@ -99,6 +104,8 @@ object PaymentOverlay {
     val txnId = spec.getInt("txnId")
     val notificationId = spec.getInt("notificationId")
     val suggestedId = spec.optString("suggestedId", "")
+    // Settings → Preview: show the card, save nothing.
+    val preview = spec.optBoolean("preview", false)
 
     // Card
     val card =
@@ -209,7 +216,7 @@ object PaymentOverlay {
         // Commit after the undo window, then slide away.
         pending =
             Runnable {
-                  quickTag(ctx, txnId, categoryId, notificationId)
+                  if (!preview) quickTag(ctx, txnId, categoryId, notificationId)
                   remove(ctx, animate = true)
                 }
                 .also { main.postDelayed(it, UNDO_MS) }
@@ -247,6 +254,7 @@ object PaymentOverlay {
     notNow.setOnClickListener { remove(ctx, animate = true) }
     more.setOnClickListener {
       remove(ctx, animate = false)
+      if (preview) return@setOnClickListener
       ctx.startActivity(
           Intent(Intent.ACTION_VIEW, Uri.parse("expensemanager://txn/$txnId")).apply {
             setPackage(ctx.packageName)
@@ -288,6 +296,7 @@ object PaymentOverlay {
     root.setPadding(dp(12f).toInt(), 0, dp(12f).toInt(), 0)
     wm.addView(root, params)
     current = root
+    Log.i(TAG, "Pop-up shown for payment $txnId")
 
     // Slide in from the right (brief §6: 200–250 ms ease-out).
     root.translationX = ctx.resources.displayMetrics.widthPixels.toFloat()
@@ -297,6 +306,7 @@ object PaymentOverlay {
 
   private fun remove(ctx: Context, animate: Boolean, toRight: Boolean = true) {
     val v = current ?: return
+    Log.i(TAG, "Pop-up removed")
     current = null
     val wm = ctx.getSystemService(WindowManager::class.java)
     val detach = {

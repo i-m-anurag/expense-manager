@@ -41,6 +41,7 @@ import { ThemePref, useTheme } from '../theme/ThemeProvider';
 import { fonts, screenPadding } from '../theme/tokens';
 import { ordinal } from '../utils/format';
 import { APP_VERSION, SOURCE_URL, WEBSITE_URL } from '../version';
+import { previewPopup } from '../notify/dispatch';
 import { Biometric, Notifications } from '../notify/native';
 import { openAppSettings } from '../permissions';
 
@@ -341,6 +342,13 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
             value={canOverlay && (toggles?.popup_payments ?? true)}
             onChange={setPopup}
           />
+          {canOverlay ? (
+            <Row
+              label="Preview pop-up"
+              value="See how the card looks. Nothing is saved."
+              onPress={() => previewPopup(pref)}
+            />
+          ) : null}
           {canOverlay && (toggles?.popup_payments ?? true) ? (
             <View
               style={[
