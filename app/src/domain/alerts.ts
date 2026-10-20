@@ -155,6 +155,36 @@ export function summaryNotification(
   };
 }
 
+// The pop-up card over other apps (design Extras · 5c), drawn natively by
+// PaymentOverlay.kt from this spec. Colours come from the app's own tokens.
+export function paymentPopup(
+  t: TxnView,
+  names: Record<string, string>,
+  theme: string,
+  palettes: Record<'dark' | 'light', Record<string, string>>,
+) {
+  const suggested = t.suggested_category_id;
+  return {
+    txnId: t.id,
+    notificationId: t.id,
+    merchant: t.merchant_name ?? t.merchant_raw ?? 'Payment',
+    amount: rupees(t.amount),
+    account: t.account_mask
+      ? `${(t.account_name ?? '').split(' ')[0]} ••${t.account_mask}`
+      : '',
+    suggestion: suggested ? label(suggested, names) : '',
+    suggestedId: suggested ?? '',
+    theme,
+    palettes,
+    buckets: [
+      { id: 'need.other', label: 'Need', key: 'need' },
+      { id: 'want.other', label: 'Want', key: 'want' },
+      { id: 'investment.other', label: 'Investment', key: 'investment' },
+      { id: 'loan.other', label: 'Loan / EMI', key: 'loan' },
+    ],
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Budget alerts (ALR-02 thresholds, ALR-03 pace).
 

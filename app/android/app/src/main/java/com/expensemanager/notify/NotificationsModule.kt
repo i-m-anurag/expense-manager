@@ -1,8 +1,11 @@
 package com.expensemanager.notify
 
+import android.app.ActivityManager
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -49,6 +52,40 @@ class NotificationsModule(private val context: ReactApplicationContext) :
   @ReactMethod
   fun cancel(id: Double) {
     NotificationManagerCompat.from(context).cancel(id.toInt())
+  }
+
+  // --- New-payment pop-up over other apps (PaymentOverlay) ---
+
+  @ReactMethod
+  fun canShowOverlay(promise: Promise) {
+    promise.resolve(PaymentOverlay.canShow(context))
+  }
+
+  // Opens Android's "Display over other apps" page for this app.
+  @ReactMethod
+  fun openOverlaySettings() {
+    context.startActivity(
+        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")).apply {
+          flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        })
+  }
+
+  @ReactMethod
+  fun showPaymentOverlay(specJson: String, promise: Promise) {
+    if (!PaymentOverlay.canShow(context)) {
+      promise.resolve(false)
+      return
+    }
+    PaymentOverlay.show(context, JSONObject(specJson))
+    promise.resolve(true)
+  }
+
+  // The pop-up is only for when the user is in another app.
+  @ReactMethod
+  fun isAppInForeground(promise: Promise) {
+    val info = ActivityManager.RunningAppProcessInfo()
+    ActivityManager.getMyMemoryState(info)
+    promise.resolve(info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
   }
 
   @ReactMethod

@@ -79,6 +79,7 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
       'lock_enabled',
       'lock_biometric',
       'block_screenshots',
+      'popup_payments',
     ] as const;
     const out: Record<string, boolean> = {};
     for (const k of keys) out[k] = (await getSetting(s, k)) !== '0';
@@ -90,6 +91,8 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
   const hasPin = useQuery(() => SecureStore.hasPin(), []) ?? false;
   const notifEnabled = useQuery(() => Notifications.enabled(), []) ?? true;
   const bioAvailable = useQuery(() => Biometric.isAvailable(), []) ?? false;
+  const canOverlay =
+    useQuery(() => Notifications.canShowOverlay(), []) ?? false;
   const [dialog, setDialog] = useState<Dialog>(null);
   const [text, setText] = useState('');
   const [draftMode, setDraftMode] = useState<'calendar' | 'salary'>('calendar');
@@ -110,6 +113,14 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
   const setLockAfter = async (seconds: number) => {
     await setSetting(sql, 'lock_after', String(seconds));
     refresh();
+  };
+  // The pop-up needs Android's "Display over other apps" permission; Settings
+  // re-checks it when the user comes back from that page.
+  const setPopup = async (on: boolean) => {
+    await setToggle('popup_payments', on);
+    if (on && !canOverlay) {
+      Notifications.openOverlaySettings();
+    }
   };
   const setLock = async (on: boolean) => {
     if (on && !hasPin) {
@@ -314,6 +325,16 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
             hint="Each payment with one-tap tags"
             value={toggles?.notify_transactions ?? true}
             onChange={v => setToggle('notify_transactions', v)}
+          />
+          <ToggleRow
+            label="Pop-up over other apps"
+            hint={
+              canOverlay
+                ? 'A card slides in to ask for the bucket'
+                : 'Needs "Display over other apps". Turn on to allow.'
+            }
+            value={canOverlay && (toggles?.popup_payments ?? true)}
+            onChange={setPopup}
           />
           <ToggleRow
             label="Budget alerts"

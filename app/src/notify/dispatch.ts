@@ -12,11 +12,13 @@ import {
   budgetAlerts,
   isQuiet,
   paymentNotification,
+  paymentPopup,
   quietEnds,
   summaryNotification,
   upcomingReminders,
 } from '../domain/alerts';
 import { getBudgetSnapshot } from '../domain/budget';
+import { palettes } from '../theme/tokens';
 import { Notifications } from './native';
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -95,6 +97,7 @@ export async function afterIngest(
       for (const t of fresh) {
         await Notifications.show(paymentNotification(t, names, inQuiet));
       }
+      await maybePopup(sql, fresh, names, inQuiet);
     }
   }
 
@@ -111,6 +114,52 @@ export async function afterIngest(
     }
   }
   await scheduleReminders(sql, now);
+}
+
+// Native colours as #AARRGGBB (the tint is gold at 12% / 14%).
+function popupPalette(name: 'dark' | 'light') {
+  const p = palettes[name];
+  return {
+    surfaceRaised: p.surfaceRaised,
+    border: p.border,
+    textPrimary: p.textPrimary,
+    textSecondary: p.textSecondary,
+    textTertiary: p.textTertiary,
+    gold: p.gold,
+    goldText: p.goldText,
+    goldTint: name === 'dark' ? '#1FD4AF6A' : '#24D4AF6A',
+    need: p.bucket.need,
+    want: p.bucket.want,
+    investment: p.bucket.investment,
+    loan: p.bucket.loan,
+  };
+}
+
+// The pop-up over other apps, for the newest payment that still needs a
+// bucket. Only when allowed, outside the app, and not during quiet hours.
+async function maybePopup(
+  sql: Sql,
+  fresh: Awaited<ReturnType<typeof getTxn>>[],
+  names: Record<string, string>,
+  inQuiet: boolean,
+) {
+  const t = [...fresh].reverse().find(x => x && !x.category_id);
+  if (
+    !t ||
+    inQuiet ||
+    !(await isOn(sql, 'popup_payments')) ||
+    !(await Notifications.canShowOverlay()) ||
+    (await Notifications.isAppInForeground())
+  ) {
+    return;
+  }
+  const theme = (await getSetting(sql, 'theme')) ?? 'system';
+  await Notifications.showPaymentOverlay(
+    paymentPopup(t, names, theme, {
+      dark: popupPalette('dark'),
+      light: popupPalette('light'),
+    }),
+  );
 }
 
 // ALR-04: schedule reminders for recurring payments due soon. Runs after new

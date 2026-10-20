@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Optional: the new-payment pop-up over other apps. Off until the user allows it. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
       android:name=".MainApplication"

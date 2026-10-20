@@ -19,7 +19,8 @@ export type SettingKey =
   | 'lock_enabled'
   | 'lock_biometric'
   | 'lock_after'
-  | 'block_screenshots';
+  | 'block_screenshots'
+  | 'popup_payments';
 
 // Toggles that are on unless the user switched them off.
 export async function isOn(sql: Sql, key: SettingKey) {

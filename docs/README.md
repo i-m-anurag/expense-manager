@@ -124,6 +124,13 @@ lock timing, screenshot blocking; about. Not yet: backup/restore and CSV export.
 - **Quiet hours** 10 PM–8 AM: payment notifications arrive silently, alerts wait
   until 8 AM.
 - Notification taps deep-link (`expensemanager://txn/42`, `…/budget`).
+- **Pop-up over other apps** (design Extras · 5c, `PaymentOverlay.kt`): when a
+  new payment needs a bucket and the user is in another app, a native card
+  slides in from the right with Need / Want / Investment / Loan, More
+  categories and Not now. A tap shows "Saved as … · Undo" for 3 seconds, then
+  saves via `QuickTag`. Swipe sideways or wait 20 seconds to dismiss; the
+  notification stays. Needs Android's "Display over other apps" permission
+  (optional, turned on from Settings); skipped during quiet hours.
 
 ### App lock (app/src/lock)
 

@@ -22,6 +22,10 @@ interface NotificationsNative {
   schedule(spec: string, atMs: number): Promise<boolean>;
   cancel(id: number): void;
   enabled(): Promise<boolean>;
+  canShowOverlay(): Promise<boolean>;
+  openOverlaySettings(): void;
+  showPaymentOverlay(spec: string): Promise<boolean>;
+  isAppInForeground(): Promise<boolean>;
 }
 
 interface BiometricNative {
@@ -42,6 +46,14 @@ export const Notifications = {
     notifications?.schedule(JSON.stringify(s), atMs) ?? Promise.resolve(false),
   cancel: (id: number) => notifications?.cancel(id),
   enabled: () => notifications?.enabled() ?? Promise.resolve(false),
+  canShowOverlay: () =>
+    notifications?.canShowOverlay() ?? Promise.resolve(false),
+  openOverlaySettings: () => notifications?.openOverlaySettings(),
+  showPaymentOverlay: (spec: object) =>
+    notifications?.showPaymentOverlay(JSON.stringify(spec)) ??
+    Promise.resolve(false),
+  isAppInForeground: () =>
+    notifications?.isAppInForeground() ?? Promise.resolve(true),
 };
 
 export const Biometric = {
