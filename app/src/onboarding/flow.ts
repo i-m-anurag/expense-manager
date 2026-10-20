@@ -11,6 +11,7 @@ type Step = Exclude<
   | 'EmergencyFund'
   | 'EditBudget'
   | 'UnparsedSms'
+  | 'Settings'
 >;
 
 // Order of the onboarding journey after the permission screens. Manual mode

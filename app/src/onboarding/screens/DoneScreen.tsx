@@ -64,8 +64,8 @@ export function DoneScreen({ navigation }: ScreenProps<'Done'>) {
     [
       'Budget cycle',
       state.cycleMode === 'calendar'
-        ? 'Calendar month'
-        : `${ordinal(state.cycleDay)} of month`,
+        ? '1st of every month'
+        : `${ordinal(state.cycleDay)} of month (salary day)`,
     ],
     ['Budget', `₹${groupINR(state.income)} split`],
     ['Emergency fund', `${state.emergencyMonths} months`],

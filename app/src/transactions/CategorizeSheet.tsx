@@ -12,7 +12,11 @@ import { pastPaymentsCount, setCategory } from '../domain/actions';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import { dayLabel, timeLabel } from '../utils/format';
-import { CategoryPicker, useBucketColor } from './CategoryPicker';
+import {
+  CREDIT_BUCKETS,
+  CategoryPicker,
+  useBucketColor,
+} from './CategoryPicker';
 
 interface Props {
   txn: TxnView | null;
@@ -48,7 +52,7 @@ export function CategorizeSheet({ txn, onClose }: Props) {
     if (!choice) {
       return;
     }
-    await setCategory(sql, txn.id, choice, true);
+    await setCategory(sql, txn.id, choice, txn.direction === 'debit');
     refresh();
     onClose();
   };
@@ -114,7 +118,15 @@ export function CategorizeSheet({ txn, onClose }: Props) {
       <Txt variant="caption" tone="tertiary" style={styles.or}>
         {suggested ? 'Or choose another' : 'Choose a bucket'}
       </Txt>
-      <CategoryPicker value={choice} onChange={setChoice} labels={false} />
+      <CategoryPicker
+        value={choice}
+        onChange={setChoice}
+        labels={false}
+        buckets={txn.direction === 'credit' ? CREDIT_BUCKETS : undefined}
+        exclude={
+          txn.direction === 'credit' ? ['emergency.withdrawal'] : undefined
+        }
+      />
 
       <Button
         label="Save"

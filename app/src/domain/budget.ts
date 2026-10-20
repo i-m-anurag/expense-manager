@@ -31,6 +31,7 @@ export interface Spend {
   bucket: string | null;
   category_name: string | null;
   merchant_key: string | null;
+  merchant_name?: string | null;
 }
 
 export interface BucketView {
@@ -273,7 +274,14 @@ const SPEND_WHERE = `
   t.direction = 'debit' AND t.is_transfer = 0 AND t.is_emergency = 0
   AND (a.include_in_budget IS NULL OR a.include_in_budget = 1)`;
 
-async function cycleSettings(sql: Sql) {
+// Money in that the user put in a spending bucket (refunds, friends paying
+// back) offsets that bucket, so it is counted as negative spending.
+const OFFSET_WHERE = `
+  t.direction = 'credit' AND t.is_transfer = 0
+  AND c.bucket IN ('need', 'want', 'investment', 'loan')
+  AND (a.include_in_budget IS NULL OR a.include_in_budget = 1)`;
+
+export async function cycleSettings(sql: Sql) {
   const mode = ((await getSetting(sql, 'cycle_mode')) ??
     'salary') as Cycle['mode'];
   const salaryDay = Number((await getSetting(sql, 'salary_day')) ?? 1);
@@ -325,14 +333,17 @@ export async function ensureCurrentCycle(
   return cycle;
 }
 
-const spendsBetween = (sql: Sql, from: number, to: number) =>
+export const spendsBetween = (sql: Sql, from: number, to: number) =>
   all<Spend & { [k: string]: any }>(
     sql,
-    `SELECT t.amount, t.category_id, c.bucket, c.name AS category_name, t.merchant_key
+    `SELECT CASE WHEN t.direction = 'credit' THEN -t.amount ELSE t.amount END AS amount,
+       t.category_id, c.bucket, c.name AS category_name, t.merchant_key,
+       t.merchant_name
      FROM transactions t
      LEFT JOIN categories c ON c.id = t.category_id
      LEFT JOIN accounts a ON a.id = t.account_id
-     WHERE ${SPEND_WHERE} AND t.occurred_at >= ? AND t.occurred_at < ?`,
+     WHERE ((${SPEND_WHERE}) OR (${OFFSET_WHERE}))
+       AND t.occurred_at >= ? AND t.occurred_at < ?`,
     [from, to],
   );
 
@@ -550,4 +561,29 @@ export async function getEmergencySnapshot(
     })),
     refillMonthly,
   };
+}
+
+// SET-02: switch between resetting on the 1st and on salary day. The current
+// cycle's dates move straight away; its plan and history stay.
+export async function setCycleMode(
+  sql: Sql,
+  mode: Cycle['mode'],
+  salaryDay: number,
+  now = Date.now(),
+) {
+  await sql.transaction(async () => {
+    await sql.execute(
+      "INSERT INTO settings (key, value) VALUES ('cycle_mode', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+      [mode],
+    );
+    await sql.execute(
+      "INSERT INTO settings (key, value) VALUES ('salary_day', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+      [String(salaryDay)],
+    );
+    const range = currentCycle(mode, salaryDay, now);
+    await sql.execute(
+      "UPDATE budget_cycles SET start_date = ?, end_date = ?, mode = ? WHERE status = 'active'",
+      [range.start, range.end, mode],
+    );
+  });
 }

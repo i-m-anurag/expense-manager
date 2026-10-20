@@ -45,12 +45,14 @@ export function IncomeScreen() {
             : { incomeConfirmed: true },
         )
       }
-      ghost="Use calendar month instead"
+      ghost={
+        state.cycleMode === 'calendar'
+          ? 'Reset on salary day instead'
+          : 'Reset on the 1st instead'
+      }
       onGhost={() =>
-        next({
-          cycleMode: 'calendar',
-          cycleDay: 1,
-          income: valid ? amount : state.income,
+        update({
+          cycleMode: state.cycleMode === 'calendar' ? 'salary' : 'calendar',
         })
       }
     >
@@ -135,8 +137,11 @@ export function IncomeScreen() {
         )}
       </Card>
       <Txt tone="secondary" style={styles.mt20}>
-        Your budget cycle will start on salary day and reset each month when
-        your pay arrives.
+        {state.cycleMode === 'calendar'
+          ? 'Your budget resets on the 1st of every month. You can change this in Settings.'
+          : `Your budget resets on the ${ordinal(
+              state.cycleDay,
+            )} of every month, when your pay arrives.`}
       </Txt>
     </OnboardingLayout>
   );

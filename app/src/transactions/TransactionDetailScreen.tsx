@@ -31,7 +31,7 @@ import { ScreenProps } from '../navigation/types';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts, screenPadding } from '../theme/tokens';
 import { dateTimeLabel } from '../utils/format';
-import { CategoryPicker } from './CategoryPicker';
+import { CREDIT_BUCKETS, CategoryPicker } from './CategoryPicker';
 
 type Dialog = 'emergency' | 'note' | null;
 
@@ -61,7 +61,9 @@ export function TransactionDetailScreen({
   const selected = txn.category_id ?? txn.suggested_category_id;
 
   const pick = async (categoryId: string) => {
-    await setCategory(sql, txn.id, categoryId, remember);
+    // Money in doesn't teach merchant memory: a refund from a shop shouldn't
+    // make future payments to it look like income.
+    await setCategory(sql, txn.id, categoryId, remember && !credit);
     refresh();
   };
   const flag = async (f: Flag) => {
@@ -179,10 +181,21 @@ export function TransactionDetailScreen({
           </Txt>
         </View>
 
-        {!credit && !txn.is_transfer && !txn.is_emergency ? (
+        {!txn.is_transfer && !txn.is_emergency ? (
           <View style={styles.section}>
-            <CategoryPicker value={selected} onChange={pick} />
-            {txn.merchant_key ? (
+            <CategoryPicker
+              value={selected}
+              onChange={pick}
+              buckets={credit ? CREDIT_BUCKETS : undefined}
+              exclude={credit ? ['emergency.withdrawal'] : undefined}
+            />
+            {credit ? (
+              <Txt variant="caption" tone="tertiary" style={styles.mt8}>
+                Money back in a bucket (a refund, a friend paying you back)
+                lowers that bucket's spending. Income isn't part of the budget.
+              </Txt>
+            ) : null}
+            {txn.merchant_key && !credit ? (
               <Card style={styles.remember}>
                 <View style={styles.flex}>
                   <Txt variant="bodyMedium">Always use this for {merchant}</Txt>
@@ -201,8 +214,7 @@ export function TransactionDetailScreen({
         ) : (
           <Card style={[styles.section, styles.categoryNote]}>
             <Txt variant="bodyMedium">
-              {txn.category_name ??
-                (credit ? 'Money in' : 'Not counted in budget')}
+              {txn.category_name ?? 'Not counted in budget'}
             </Txt>
             <Txt variant="caption" tone="tertiary" style={styles.mt2}>
               {txn.is_transfer
@@ -211,7 +223,7 @@ export function TransactionDetailScreen({
                 ? `Paid from the emergency fund${
                     txn.note ? ` · ${txn.note}` : ''
                   }. Not counted in the monthly budget.`
-                : 'Money in is not part of your spending budget.'}
+                : ''}
             </Txt>
           </Card>
         )}

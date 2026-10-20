@@ -35,6 +35,8 @@ export interface OnboardingState {
   scan: ScanSummary | null;
   accounts: OnboardingAccount[];
   income: number;
+  // Day of the month salary arrives. The budget resets on it only in
+  // 'salary' mode; the default is the 1st of each month.
   cycleDay: number;
   cycleMode: 'salary' | 'calendar';
   incomeConfirmed: boolean;
@@ -58,7 +60,7 @@ const initialState: OnboardingState = {
   accounts: [],
   income: 100000,
   cycleDay: 1,
-  cycleMode: 'salary',
+  cycleMode: 'calendar',
   incomeConfirmed: false,
   template: 'custom',
   split: {
@@ -105,6 +107,8 @@ interface Ctx {
   state: OnboardingState;
   update: (patch: Partial<OnboardingState>) => void;
   applyScan: (scan: ScanSummary) => void;
+  // Back to a blank onboarding (after "Delete all data").
+  reset: () => void;
 }
 
 const OnboardingContext = createContext<Ctx | null>(null);
@@ -119,6 +123,7 @@ export function OnboardingProvider({
     () => ({
       state,
       update: patch => setState(s => ({ ...s, ...patch })),
+      reset: () => setState(initialState),
       applyScan: scan =>
         setState(s => ({
           ...s,

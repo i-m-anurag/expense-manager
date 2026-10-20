@@ -8,7 +8,8 @@ import { fonts } from '../theme/tokens';
 
 const TABS: Record<string, { label: string; icon: IconName }> = {
   Home: { label: 'Home', icon: 'home' },
-  Transactions: { label: 'Transactions', icon: 'list' },
+  // Singular label: "Transactions" doesn't fit the 64dp tab on small phones.
+  Transactions: { label: 'Transaction', icon: 'list' },
   Add: { label: 'Add payment', icon: 'plus' },
   Budget: { label: 'Budget', icon: 'wallet' },
   Insights: { label: 'Insights', icon: 'chart' },

@@ -81,6 +81,34 @@ separate Gradle module once there is more than one native module.
 - Privacy mode (eye on Home) hides every amount until turned off.
 - "SMS we couldn't read" lists unparsed bank messages (SMS-09).
 
+### Insights (app/src/domain/insights.ts, app/src/insights)
+
+- One cycle at a time with a ‹ › picker (back to the oldest transaction).
+- Notes: Wants/Needs ahead of pace, the biggest category drop vs last cycle,
+  on-schedule investment streak.
+- Where it went (the app's one donut), top categories, last 6 cycles, month-end
+  forecast (current cycle: spending so far + flexible daily pace for the days
+  left + recurring payments still due; rent, SIPs and EMIs aren't projected),
+  subscriptions, saved-and-invested rate, top merchants.
+- Accessibility: the bucket colours from the brief fail the colour-blind check
+  (Need blue vs Want purple are almost the same for red-green colour blindness),
+  so every coloured mark also carries a text label and percentage.
+
+### Settings (app/src/settings)
+
+Name; budget reset day (1st of the month, the default, or salary day; switching
+moves the current cycle); edit budget; accounts (rename, type, include in
+budget); theme (system/light/dark, saved); hide amounts; re-scan SMS; unread SMS;
+delete all data and start again (SEC-07); about. Not yet: app lock on open,
+backup/restore and CSV export.
+
+### Credits
+
+Money in can be put in any bucket. A credit in Need/Want/Investment/Loan (a
+refund, a friend paying back) offsets that bucket's spending; Income and
+Emergency fund credits don't touch the budget. Credits don't teach merchant
+memory.
+
 ### Onboarding (app/src/onboarding)
 
 Implements the 15-screen onboarding design (brief §9.1, PRD §7.1):

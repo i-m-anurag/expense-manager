@@ -114,6 +114,17 @@ export function HomeScreen({ navigation }: TabProps<'Home'>) {
               color={hidden ? c.goldText : c.textSecondary}
             />
           </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('Settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+            style={[
+              styles.roundBtn,
+              { borderColor: c.border, backgroundColor: c.surface },
+            ]}
+          >
+            <Icon name="user" size={22} color={c.textSecondary} />
+          </Pressable>
         </View>
 
         {budget ? (

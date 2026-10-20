@@ -11,6 +11,7 @@ import { getDb } from '../db/connection';
 import { getSetting } from '../db/settings';
 import { Sql } from '../db/sql';
 import { reconcileInbox } from '../sms/sync';
+import { ThemePref, useTheme } from '../theme/ThemeProvider';
 
 interface DataCtx {
   sql: Sql;
@@ -37,17 +38,24 @@ export function DataProvider({
   const [boot, setBoot] = useState<Boot>({ state: 'loading' });
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion(v => v + 1), []);
+  const { setPref } = useTheme();
 
   useEffect(() => {
     (async () => {
       try {
         const sql = await getDb();
         const onboarded = (await getSetting(sql, 'onboarded')) === '1';
+        const theme = await getSetting(sql, 'theme');
+        if (theme) {
+          setPref(theme as ThemePref);
+        }
         setBoot({ state: 'ready', sql, onboarded });
       } catch (e) {
         setBoot({ state: 'error', error: e as Error });
       }
     })();
+    // Runs once at launch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // SMS-08: reconcile the inbox at launch and whenever the app comes back.

@@ -5,6 +5,7 @@ import {
   BUCKET_LABELS,
   BUDGET_BUCKETS,
   Category,
+  CategoryBucket,
   bucketOf,
   listCategories,
 } from '../db/categories';
@@ -14,12 +15,23 @@ import { Txt } from '../components/Txt';
 
 export type BudgetBucket = (typeof BUDGET_BUCKETS)[number];
 
+// Money in can go to any bucket: a refund in Want offsets Want spending,
+// salary goes to Income, a top-up to the emergency fund.
+export const CREDIT_BUCKETS: CategoryBucket[] = [
+  ...BUDGET_BUCKETS,
+  'emergency',
+  'income',
+];
+
 export function useBucketColor() {
   const { c } = useTheme();
-  // Transfers, income and uncategorised rows get a neutral dot.
+  // Income is green like other money in; transfers and uncategorised rows
+  // get a neutral dot.
   return (bucket: string | null | undefined) =>
     bucket && bucket in c.bucket
       ? c.bucket[bucket as keyof typeof c.bucket]
+      : bucket === 'income'
+      ? c.status.onTrack
       : c.textTertiary;
 }
 
@@ -27,23 +39,36 @@ interface Props {
   value: string | null; // selected category id
   onChange: (categoryId: string) => void;
   labels?: boolean;
+  buckets?: CategoryBucket[];
+  // Sub-categories to leave out (e.g. "Withdrawal" when money comes in).
+  exclude?: string[];
 }
 
 // Bucket chips, then sub-category chips for the chosen bucket (brief §9.4).
 // One tap on a bucket picks its first sub-category, so the common case is a
 // single tap; a second tap refines it.
-export function CategoryPicker({ value, onChange, labels = true }: Props) {
+export function CategoryPicker({
+  value,
+  onChange,
+  labels = true,
+  buckets = [...BUDGET_BUCKETS],
+  exclude = [],
+}: Props) {
   const { c } = useTheme();
   const colorOf = useBucketColor();
   const categories = useQuery(listCategories, []) ?? [];
   const selectedBucket = value ? bucketOf(value) : null;
-  const subs = categories.filter(x => x.bucket === selectedBucket);
+  const subs = categories.filter(
+    x => x.bucket === selectedBucket && !exclude.includes(x.id),
+  );
 
-  const pickBucket = (b: BudgetBucket) => {
+  const pickBucket = (b: CategoryBucket) => {
     if (b === selectedBucket) {
       return;
     }
-    const first = categories.find((x: Category) => x.bucket === b);
+    const first = categories.find(
+      (x: Category) => x.bucket === b && !exclude.includes(x.id),
+    );
     if (first) {
       onChange(first.id);
     }
@@ -57,7 +82,7 @@ export function CategoryPicker({ value, onChange, labels = true }: Props) {
         </Txt>
       ) : null}
       <View style={styles.wrap}>
-        {BUDGET_BUCKETS.map(b => {
+        {buckets.map(b => {
           const on = b === selectedBucket;
           return (
             <Pressable

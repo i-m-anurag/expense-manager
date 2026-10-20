@@ -124,3 +124,49 @@ export function getAccount(sql: Sql, id: string) {
     [id],
   );
 }
+
+// SET-01: rename, change type or budget inclusion. Emergency-fund accounts are
+// kept out of the budget and linked to the fund (ACC-04, EMF-04).
+export async function updateAccount(
+  sql: Sql,
+  id: string,
+  patch: {
+    display_name?: string;
+    type?: AccountType;
+    include_in_budget?: boolean;
+  },
+) {
+  await sql.transaction(async () => {
+    const sets: string[] = [];
+    const params: (string | number)[] = [];
+    if (patch.display_name !== undefined) {
+      sets.push('display_name = ?');
+      params.push(patch.display_name);
+    }
+    if (patch.type !== undefined) {
+      sets.push('type = ?');
+      params.push(patch.type);
+    }
+    if (patch.include_in_budget !== undefined) {
+      sets.push('include_in_budget = ?');
+      params.push(patch.include_in_budget ? 1 : 0);
+    }
+    if (patch.type === 'emergency') {
+      sets.push('include_in_budget = 0');
+    }
+    if (sets.length) {
+      await sql.execute(`UPDATE accounts SET ${sets.join(', ')} WHERE id = ?`, [
+        ...params,
+        id,
+      ]);
+    }
+    const linked = await all<{ id: string }>(
+      sql,
+      "SELECT id FROM accounts WHERE type = 'emergency' AND archived = 0",
+    );
+    await sql.execute(
+      'UPDATE emergency_fund SET linked_account_ids = ? WHERE id = 1',
+      [JSON.stringify(linked.map(a => a.id))],
+    );
+  });
+}
