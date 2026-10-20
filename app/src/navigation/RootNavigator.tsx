@@ -1,3 +1,4 @@
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
   DarkTheme,
   DefaultTheme,
@@ -5,6 +6,8 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
+import { useData } from '../data/DataProvider';
+import { comingSoon } from '../home/ComingSoonScreen';
 import { HomeScreen } from '../home/HomeScreen';
 import { AccountsScreen } from '../onboarding/screens/AccountsScreen';
 import { DoneScreen } from '../onboarding/screens/DoneScreen';
@@ -20,12 +23,43 @@ import { SummaryScreen } from '../onboarding/screens/SummaryScreen';
 import { TrainingScreen } from '../onboarding/screens/TrainingScreen';
 import { WelcomeScreen } from '../onboarding/screens/WelcomeScreen';
 import { useTheme } from '../theme/ThemeProvider';
-import { RootStackParamList } from './types';
+import { AddTransactionScreen } from '../transactions/AddTransactionScreen';
+import { TransactionDetailScreen } from '../transactions/TransactionDetailScreen';
+import { TransactionsScreen } from '../transactions/TransactionsScreen';
+import { TabBar } from './TabBar';
+import { RootStackParamList, TabParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
+
+const BudgetScreen = comingSoon(
+  'Budget',
+  'Bucket progress, pace and fixed commitments arrive in the next milestone.',
+);
+const InsightsScreen = comingSoon(
+  'Insights',
+  'Trends, forecasts and top merchants arrive after the budget screens.',
+);
+const AddPlaceholder = () => null;
+
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      tabBar={props => <TabBar {...props} />}
+      screenOptions={{ headerShown: false }}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Transactions" component={TransactionsScreen} />
+      <Tab.Screen name="Add" component={AddPlaceholder} />
+      <Tab.Screen name="Budget" component={BudgetScreen} />
+      <Tab.Screen name="Insights" component={InsightsScreen} />
+    </Tab.Navigator>
+  );
+}
 
 export function RootNavigator() {
   const { c, name } = useTheme();
+  const { onboarded } = useData();
   const base = name === 'dark' ? DarkTheme : DefaultTheme;
   const navTheme = {
     ...base,
@@ -41,7 +75,7 @@ export function RootNavigator() {
   return (
     <NavigationContainer theme={navTheme}>
       <Stack.Navigator
-        initialRouteName="Welcome"
+        initialRouteName={onboarded ? 'Main' : 'Welcome'}
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
@@ -66,9 +100,18 @@ export function RootNavigator() {
         <Stack.Screen name="Lock" component={LockScreen} />
         <Stack.Screen name="Done" component={DoneScreen} />
         <Stack.Screen
-          name="Home"
-          component={HomeScreen}
+          name="Main"
+          component={MainTabs}
           options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="TransactionDetail"
+          component={TransactionDetailScreen}
+        />
+        <Stack.Screen
+          name="AddTransaction"
+          component={AddTransactionScreen}
+          options={{ animation: 'slide_from_bottom' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

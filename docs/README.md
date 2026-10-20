@@ -30,8 +30,35 @@ separate Gradle module once there is more than one native module.
 - `SmsInboxModule.readInbox(sinceMs, senderCodes, limit)`: backfill and on-open
   reconciliation. Filters by bank sender in Kotlin, so personal SMS never reach JS.
 - `SmsReceiver` + `SmsHeadlessService`: incoming SMS → `SmsReceived` Headless JS
-  task. The task parses only, for now; storing, categorising and notifying come
-  with the database (M0) and categorisation (M3).
+  task, which stores and categorises the transaction. The quick-tag
+  notification comes with alerts (M5).
+
+### Encrypted storage (app/src/db, app/android/.../secure)
+
+- SQLite with SQLCipher via op-sqlite (`"op-sqlite": {"sqlcipher": true}` in
+  `app/package.json`). The 256-bit database key is random, wrapped with an
+  AES-GCM key that never leaves the Android Keystore (`SecureStoreModule.kt`).
+- The app-lock PIN is stored only as a salted PBKDF2 hash, also Keystore-wrapped.
+- Schema follows PRD §9 (`migrations.ts`); money is integer paise. Raw SMS
+  bodies live in the encrypted database so transactions can be re-parsed (SMS-10).
+- Repositories take a tiny `Sql` interface, so Jest runs the same queries against
+  Node's built-in SQLite (`__tests__/helpers/memorySql.ts`).
+- Known follow-up: op-sqlite links a prebuilt OpenSSL from Maven Central for
+  SQLCipher; F-Droid may ask for it to be built from source.
+
+### Transactions (app/src/domain, app/src/transactions)
+
+- `domain/ingest.ts` is flow 8.1: raw SMS → parse → dedupe against stored rows →
+  account (bank + last 4) and balance → transfer check (self-transfer within
+  30 min, card bill, ATM) → categorise → store. It is idempotent, so the on-open
+  reconciliation (`sms/sync.ts`, SMS-08) and the background task share it.
+- `domain/categorize.ts`: transfers → merchant memory (3+ tags auto-apply,
+  1–2 suggest) → P2P pattern → well-known merchant defaults → ask.
+- Choosing a category with "Always use this" on updates merchant memory and
+  sorts the merchant's other uncategorised payments (CAT-02/07/08).
+- Screens follow the Transactions design: list with search and filters grouped
+  by day, detail with category picker, flags and source SMS, the categorize
+  sheet, and manual add from the gold + tab.
 
 ### Onboarding (app/src/onboarding)
 
@@ -44,7 +71,8 @@ Emergency fund → Quick training → App lock → All set.
   messages, skips Summary, Accounts and Training.
 - Every step after the permissions has a **Skip** that keeps sensible defaults.
 - The Scan screen reads the real inbox through the native module and the parser.
-- Onboarding state is in memory only. It moves to the encrypted database (SEC-02)
-  and the PIN to Keystore-backed storage (SEC-03) when those land.
+- "Go to Home" saves accounts, budget cycle and allocations, emergency fund,
+  merchant memory from Quick training (as high confidence) and the PIN, then
+  imports the scanned SMS as transactions (`domain/onboarding.ts`).
 - `INTERNET` is declared only in `app/android/app/src/debug/AndroidManifest.xml`
   (for Metro); release builds have no network permission (SEC-01, checked in CI).

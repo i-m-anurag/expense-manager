@@ -105,3 +105,72 @@ export function spokenINR(value: number): string {
   }
   return (value < 0 ? 'minus ' : '') + parts.join(' ') + ' rupees';
 }
+
+const IST_MS = 330 * 60 * 1000;
+const MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+// IST calendar parts of an epoch, independent of the phone's time zone.
+export function istDate(epochMs: number) {
+  const d = new Date(epochMs + IST_MS);
+  return {
+    y: d.getUTCFullYear(),
+    m: d.getUTCMonth(),
+    d: d.getUTCDate(),
+    h: d.getUTCHours(),
+    min: d.getUTCMinutes(),
+  };
+}
+
+export const monthLabel = (y: number, m: number) => `${MONTHS[m]} ${y}`;
+
+// List group headers: "Today", "Yesterday", "16 Sep", "16 Sep 2024".
+export function dayLabel(epochMs: number, now = Date.now()) {
+  const a = istDate(epochMs);
+  const today = istDate(now);
+  const yesterday = istDate(now - 24 * 3600 * 1000);
+  if (a.y === today.y && a.m === today.m && a.d === today.d) {
+    return 'Today';
+  }
+  if (a.y === yesterday.y && a.m === yesterday.m && a.d === yesterday.d) {
+    return 'Yesterday';
+  }
+  return `${a.d} ${MONTHS[a.m]}${a.y === today.y ? '' : ` ${a.y}`}`;
+}
+
+export function timeLabel(epochMs: number) {
+  const { h, min } = istDate(epochMs);
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(min).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+}
+
+// "18 Sep 2026, 8:12 pm"
+export function dateTimeLabel(epochMs: number) {
+  const a = istDate(epochMs);
+  return `${a.d} ${MONTHS[a.m]} ${a.y}, ${timeLabel(epochMs)}`;
+}
+
+// Key used to group transactions by IST day.
+export function dayKey(epochMs: number) {
+  const { y, m, d } = istDate(epochMs);
+  return `${y}-${m}-${d}`;
+}
+
+// "SW" from "Swiggy", "RK" from "Rakesh Kumar".
+export function initials(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const s = words.length >= 2 ? words[0][0] + words[1][0] : name.slice(0, 2);
+  return s.toUpperCase();
+}

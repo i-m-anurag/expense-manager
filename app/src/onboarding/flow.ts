@@ -3,7 +3,10 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { OnboardingState, useOnboarding } from './OnboardingContext';
 
-type Step = keyof RootStackParamList;
+type Step = Exclude<
+  keyof RootStackParamList,
+  'Main' | 'TransactionDetail' | 'AddTransaction'
+>;
 
 // Order of the onboarding journey after the permission screens. Manual mode
 // (SMS denied) skips everything that depends on scanned messages.
@@ -50,6 +53,9 @@ export function useNextStep(current: Step) {
     if (patch) {
       update(patch);
     }
-    navigation.navigate(nextStep(current, { ...state, ...patch }));
+    // Every onboarding step takes no params.
+    (navigation.navigate as (step: Step) => void)(
+      nextStep(current, { ...state, ...patch }),
+    );
   };
 }

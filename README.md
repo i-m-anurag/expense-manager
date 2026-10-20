@@ -42,7 +42,7 @@ Want your bank supported? See [docs/parser-guide.md](docs/parser-guide.md).
 
 ## Status
 
-Early development. Done: onboarding flow, SMS parser engine with templates for HDFC, ICICI, SBI, Axis and Bank of India, native SMS inbox reader. Next: encrypted database, transactions and categorisation.
+Early development. Done: onboarding, SMS parser engine (HDFC, ICICI, SBI, Axis, Bank of India), native SMS reader, encrypted database, transactions list/detail with smart categorisation. Next: Home dashboard, budget and emergency fund screens.
 
 ## License
 

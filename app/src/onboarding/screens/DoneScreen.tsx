@@ -1,9 +1,15 @@
-import React from 'react';
+import { allSenderCodes, bundledTemplates } from '@expense-manager/parser';
+import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Card } from '../../components/Card';
 import { Icon } from '../../components/Icon';
 import { Txt } from '../../components/Txt';
+import { useData } from '../../data/DataProvider';
+import { SecureStore } from '../../db/connection';
+import { saveOnboarding } from '../../domain/onboarding';
 import { ScreenProps } from '../../navigation/types';
+import { SCAN_DAYS } from '../../sms/scan';
+import { SmsInbox } from '../../sms/SmsInbox';
 import { useTheme } from '../../theme/ThemeProvider';
 import { groupINR, ordinal } from '../../utils/format';
 import { useOnboarding } from '../OnboardingContext';
@@ -14,6 +20,34 @@ const USER_NAME = 'Anurag'; // TODO: ask for a name during onboarding.
 export function DoneScreen({ navigation }: ScreenProps<'Done'>) {
   const { c } = useTheme();
   const { state } = useOnboarding();
+  const { sql, refresh } = useData();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Persist everything, import the scanned SMS as transactions, then go Home.
+  const finish = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const templates = bundledTemplates();
+      const messages =
+        state.smsGranted && !state.manualMode
+          ? await SmsInbox.readInbox(
+              Date.now() - SCAN_DAYS * 24 * 3600 * 1000,
+              allSenderCodes(templates),
+            )
+          : [];
+      await saveOnboarding(sql, state, messages, templates, USER_NAME);
+      if (state.pin) {
+        await SecureStore.setPin(state.pin);
+      }
+      refresh();
+      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+    } catch (e) {
+      setError((e as Error).message);
+      setSaving(false);
+    }
+  };
 
   const lock = state.pin
     ? state.biometric
@@ -42,8 +76,9 @@ export function DoneScreen({ navigation }: ScreenProps<'Done'>) {
     <OnboardingLayout
       stage="all"
       centered
-      cta="Go to Home"
-      onCta={() => navigation.reset({ index: 0, routes: [{ name: 'Home' }] })}
+      cta={saving ? 'Setting things up…' : 'Go to Home'}
+      ctaDisabled={saving}
+      onCta={finish}
     >
       <View style={styles.stack}>
         <View style={[styles.badge, { backgroundColor: c.gold }]}>
@@ -60,6 +95,11 @@ export function DoneScreen({ navigation }: ScreenProps<'Done'>) {
           <Txt tone="secondary" style={styles.mt10}>
             Here's what we set up.
           </Txt>
+          {error ? (
+            <Txt color={c.status.over} style={styles.mt10}>
+              Couldn't save: {error}
+            </Txt>
+          ) : null}
         </View>
         <Card style={styles.recap}>
           {recap.map(([k, v], i) => (
