@@ -30,6 +30,9 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<TabParamList> | undefined;
   TransactionDetail: { id: number };
   AddTransaction: undefined;
+  EmergencyFund: undefined;
+  EditBudget: undefined;
+  UnparsedSms: undefined;
 };
 
 export type ScreenProps<T extends keyof RootStackParamList> =

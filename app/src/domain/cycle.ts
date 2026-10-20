@@ -48,3 +48,35 @@ export function currentCycle(
 // Epoch ms of the start of an IST day, for querying transactions.
 export const istDayStartMs = (date: string) =>
   Date.parse(`${date}T00:00:00+05:30`);
+
+const DAY_MS = 24 * 3600 * 1000;
+
+// Whole days from a to b ('YYYY-MM-DD'), e.g. ('2025-09-01','2025-09-30') → 29.
+export const daysBetween = (a: string, b: string) =>
+  Math.round(
+    (Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / DAY_MS,
+  );
+
+export function todayIst(now = Date.now()): string {
+  const d = new Date(now + IST_MS);
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(
+    d.getUTCDate(),
+  )}`;
+}
+
+// The n cycles before the one starting on `start`, most recent first.
+export function previousCycles(
+  mode: 'salary' | 'calendar',
+  salaryDay: number,
+  start: string,
+  n: number,
+): CycleRange[] {
+  const out: CycleRange[] = [];
+  let edge = istDayStartMs(start) - 1;
+  for (let i = 0; i < n; i++) {
+    const c = currentCycle(mode, salaryDay, edge);
+    out.push(c);
+    edge = istDayStartMs(c.start) - 1;
+  }
+  return out;
+}

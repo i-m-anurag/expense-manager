@@ -60,6 +60,27 @@ separate Gradle module once there is more than one native module.
   by day, detail with category picker, flags and source SMS, the categorize
   sheet, and manual add from the gold + tab.
 
+### Home, Budget and Emergency fund (app/src/domain/budget.ts, app/src/budget, app/src/home)
+
+- `computeSnapshot()` is pure and unit-tested. Spending = debits that aren't
+  transfers or emergency-fund payments, from accounts included in the budget.
+  Uncategorised spending counts towards "left this cycle" but not any bucket.
+- **Safe to spend today** = (budget left − unpaid recurring payments still due
+  this cycle) ÷ days left including today.
+- **Status:** Over past 100%; Watch at 80%+ or past the pace tick once 30% is
+  used; Investment and EMI buckets show Paid when full (no pace tick).
+- **Recurring payments** (`recurring.ts`, TXN-10) are detected from history:
+  same payee, ±10% amount, ±3 days of the month, in 2+ months. They drive Fixed
+  commitments, Upcoming on Home and the safe-to-spend reserve. Not yet stored or
+  confirmable by the user.
+- Cycles roll over on their end date with the same plan (BUD-10); starting a
+  cycle on the actual salary credit (BUD-02) and the cycle-close summary are next.
+- Emergency fund: linked account balances from SMS (or a manual balance), minus
+  withdrawals paid from other accounts; months covered against the average Need
+  spend of the last 3 cycles, falling back to the Need budget.
+- Privacy mode (eye on Home) hides every amount until turned off.
+- "SMS we couldn't read" lists unparsed bank messages (SMS-09).
+
 ### Onboarding (app/src/onboarding)
 
 Implements the 15-screen onboarding design (brief §9.1, PRD §7.1):

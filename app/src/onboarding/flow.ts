@@ -5,7 +5,12 @@ import { OnboardingState, useOnboarding } from './OnboardingContext';
 
 type Step = Exclude<
   keyof RootStackParamList,
-  'Main' | 'TransactionDetail' | 'AddTransaction'
+  | 'Main'
+  | 'TransactionDetail'
+  | 'AddTransaction'
+  | 'EmergencyFund'
+  | 'EditBudget'
+  | 'UnparsedSms'
 >;
 
 // Order of the onboarding journey after the permission screens. Manual mode

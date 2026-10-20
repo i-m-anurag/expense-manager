@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Txt } from './src/components/Txt';
 import { DataProvider } from './src/data/DataProvider';
+import { PrivacyProvider } from './src/data/Privacy';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { OnboardingProvider } from './src/onboarding/OnboardingContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeProvider';
@@ -31,9 +32,11 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <DataProvider fallback={error => <Boot error={error} />}>
-          <OnboardingProvider>
-            <RootNavigator />
-          </OnboardingProvider>
+          <PrivacyProvider>
+            <OnboardingProvider>
+              <RootNavigator />
+            </OnboardingProvider>
+          </PrivacyProvider>
         </DataProvider>
       </ThemeProvider>
     </SafeAreaProvider>

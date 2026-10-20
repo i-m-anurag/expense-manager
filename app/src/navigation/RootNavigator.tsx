@@ -6,6 +6,9 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
+import { BudgetScreen } from '../budget/BudgetScreen';
+import { EditBudgetScreen } from '../budget/EditBudgetScreen';
+import { EmergencyFundScreen } from '../budget/EmergencyFundScreen';
 import { useData } from '../data/DataProvider';
 import { comingSoon } from '../home/ComingSoonScreen';
 import { HomeScreen } from '../home/HomeScreen';
@@ -26,16 +29,13 @@ import { useTheme } from '../theme/ThemeProvider';
 import { AddTransactionScreen } from '../transactions/AddTransactionScreen';
 import { TransactionDetailScreen } from '../transactions/TransactionDetailScreen';
 import { TransactionsScreen } from '../transactions/TransactionsScreen';
+import { UnparsedSmsScreen } from '../transactions/UnparsedSmsScreen';
 import { TabBar } from './TabBar';
 import { RootStackParamList, TabParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-const BudgetScreen = comingSoon(
-  'Budget',
-  'Bucket progress, pace and fixed commitments arrive in the next milestone.',
-);
 const InsightsScreen = comingSoon(
   'Insights',
   'Trends, forecasts and top merchants arrive after the budget screens.',
@@ -108,6 +108,9 @@ export function RootNavigator() {
           name="TransactionDetail"
           component={TransactionDetailScreen}
         />
+        <Stack.Screen name="EmergencyFund" component={EmergencyFundScreen} />
+        <Stack.Screen name="EditBudget" component={EditBudgetScreen} />
+        <Stack.Screen name="UnparsedSms" component={UnparsedSmsScreen} />
         <Stack.Screen
           name="AddTransaction"
           component={AddTransactionScreen}
