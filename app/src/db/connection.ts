@@ -10,6 +10,7 @@ interface SecureStoreNative {
   verifyPin(pin: string): Promise<boolean>;
   hasPin(): Promise<boolean>;
   clearPin(): Promise<boolean>;
+  setSecureWindow(enabled: boolean): void;
 }
 
 // Kotlin module in android/app/src/main/java/com/expensemanager/secure.

@@ -25,6 +25,12 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- Deep links from notifications, e.g. expensemanager://txn/42 -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="expensemanager" />
+        </intent-filter>
       </activity>
 
       <!-- Incoming bank SMS → Headless JS task (PRD SMS-07). -->
@@ -37,5 +43,10 @@
         </intent-filter>
       </receiver>
       <service android:name=".sms.SmsHeadlessService" android:exported="false" />
+
+      <!-- Notification quick-tag buttons and scheduled reminders (PRD §7.8). -->
+      <receiver android:name=".notify.NotificationActionReceiver" android:exported="false" />
+      <receiver android:name=".notify.ScheduledNotificationReceiver" android:exported="false" />
+      <service android:name=".notify.QuickTagService" android:exported="false" />
     </application>
 </manifest>

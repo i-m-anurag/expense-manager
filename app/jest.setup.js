@@ -17,6 +17,7 @@ jest.mock('./src/db/connection', () => {
       verifyPin: async () => true,
       hasPin: async () => false,
       clearPin: async () => true,
+      setSecureWindow: () => {},
     },
   };
 });

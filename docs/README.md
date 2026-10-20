@@ -99,8 +99,40 @@ separate Gradle module once there is more than one native module.
 Name; budget reset day (1st of the month, the default, or salary day; switching
 moves the current cycle); edit budget; accounts (rename, type, include in
 budget); theme (system/light/dark, saved); hide amounts; re-scan SMS; unread SMS;
-delete all data and start again (SEC-07); about. Not yet: app lock on open,
-backup/restore and CSV export.
+delete all data and start again (SEC-07); notifications; app lock, fingerprint,
+lock timing, screenshot blocking; about. Not yet: backup/restore and CSV export.
+
+### Notifications and alerts (app/src/domain/alerts.ts, app/src/notify, android/.../notify)
+
+- Local notifications only, via a small Kotlin module (no library, nothing
+  leaves the phone). Channels: New payments, New payments (quiet), Budget
+  alerts, Upcoming payments.
+- **New payment** (ALR-01, CAT-06): "₹450 at Swiggy · HDFC ••4521" with the
+  suggested bucket first, the other day-to-day bucket, and Other (opens the
+  payment). Tapping a bucket runs the `QuickTag` Headless JS task: it saves the
+  category, teaches merchant memory, and briefly shows "Saved as …".
+  Auto-categorised payments show where they went with a Change button. More
+  than 3 new payments at once get one summary. Payments older than 24 hours
+  (caught up later) don't notify.
+- **Budget alerts** for Need and Want: 50/80/100% once per cycle (only the
+  highest new one is shown), and a pace alert at 20% past pace once 30% is
+  used, at most weekly and not right after a threshold alert. Investment and
+  EMI buckets fill in one payment, so they don't alert.
+- **Upcoming payments** (ALR-04): 9 AM, 2 days before a detected EMI/SIP/rent/
+  subscription, once per cycle. Scheduled with inexact alarms (no exact-alarm
+  permission); alarms are lost on reboot and re-scheduled on the next app open.
+- **Quiet hours** 10 PM–8 AM: payment notifications arrive silently, alerts wait
+  until 8 AM.
+- Notification taps deep-link (`expensemanager://txn/42`, `…/budget`).
+
+### App lock (app/src/lock)
+
+- Locks on launch and after 1 minute in the background (Now / 1 min / 5 min in
+  Settings). PIN checked against the Keystore-wrapped PBKDF2 hash; fingerprint
+  via AndroidX Biometric. 5 wrong tries → 30-second wait.
+- "Forgot PIN?" can only delete all data and start again: the PIN is never
+  stored anywhere it could be recovered from.
+- Screenshots and the recent-apps preview are blocked by default (SEC-09).
 
 ### Credits
 

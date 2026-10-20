@@ -42,7 +42,7 @@ Want your bank supported? See [docs/parser-guide.md](docs/parser-guide.md).
 
 ## Status
 
-Early development. Done: onboarding, SMS parser engine (HDFC, ICICI, SBI, Axis, Bank of India), native SMS reader, encrypted database, transactions with smart categorisation, Home dashboard, Budget, Emergency fund, Insights and Settings. Next: payment notifications and alerts, app lock, backup and export.
+Early development. Done: onboarding, SMS parser engine (HDFC, ICICI, SBI, Axis, Bank of India), native SMS reader, encrypted database, transactions with smart categorisation, Home dashboard, Budget, Emergency fund, Insights, Settings, payment notifications with quick tags, budget alerts and app lock. Next: encrypted backup and restore, CSV export, starting the cycle on the salary credit.
 
 ## License
 

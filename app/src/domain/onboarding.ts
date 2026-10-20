@@ -108,6 +108,8 @@ export async function saveOnboarding(
     await setSetting(sql, 'quiet_start', '22:00');
     await setSetting(sql, 'quiet_end', '08:00');
     await setSetting(sql, 'notifications', s.notificationsGranted ? '1' : '0');
+    await setSetting(sql, 'lock_enabled', s.pin ? '1' : '0');
+    await setSetting(sql, 'lock_biometric', s.pin && s.biometric ? '1' : '0');
   });
 
   if (messages.length) {

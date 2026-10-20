@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
   DarkTheme,
   DefaultTheme,
+  LinkingOptions,
   NavigationContainer,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -12,6 +13,7 @@ import { EmergencyFundScreen } from '../budget/EmergencyFundScreen';
 import { useData } from '../data/DataProvider';
 import { HomeScreen } from '../home/HomeScreen';
 import { InsightsScreen } from '../insights/InsightsScreen';
+import { SetPinScreen } from '../lock/SetPinScreen';
 import { AccountsScreen } from '../onboarding/screens/AccountsScreen';
 import { DoneScreen } from '../onboarding/screens/DoneScreen';
 import { EmergencyScreen } from '../onboarding/screens/EmergencyScreen';
@@ -32,9 +34,27 @@ import { TransactionDetailScreen } from '../transactions/TransactionDetailScreen
 import { TransactionsScreen } from '../transactions/TransactionsScreen';
 import { UnparsedSmsScreen } from '../transactions/UnparsedSmsScreen';
 import { TabBar } from './TabBar';
+import { navigationRef } from './navigationRef';
 import { RootStackParamList, TabParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+// Notification taps open these (see notify/Notifier.kt).
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['expensemanager://'],
+  config: {
+    screens: {
+      Main: {
+        screens: {
+          Home: 'home',
+          Transactions: 'transactions',
+          Budget: 'budget',
+        },
+      },
+      TransactionDetail: { path: 'txn/:id', parse: { id: Number } },
+    },
+  },
+};
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const AddPlaceholder = () => null;
@@ -70,7 +90,11 @@ export function RootNavigator() {
     },
   };
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer
+      theme={navTheme}
+      ref={navigationRef}
+      linking={onboarded ? linking : undefined}
+    >
       <Stack.Navigator
         initialRouteName={onboarded ? 'Main' : 'Welcome'}
         screenOptions={{
@@ -109,6 +133,7 @@ export function RootNavigator() {
         <Stack.Screen name="EditBudget" component={EditBudgetScreen} />
         <Stack.Screen name="UnparsedSms" component={UnparsedSmsScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="SetPin" component={SetPinScreen} />
         <Stack.Screen
           name="AddTransaction"
           component={AddTransactionScreen}

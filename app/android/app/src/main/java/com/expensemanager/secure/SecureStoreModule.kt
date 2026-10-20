@@ -4,6 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import android.view.WindowManager
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -83,6 +84,16 @@ class SecureStoreModule(context: ReactApplicationContext) : ReactContextBaseJava
   fun clearPin(promise: Promise) {
     prefs.edit().remove(PIN_KEY).commit()
     promise.resolve(true)
+  }
+
+  // SEC-09: keep amounts out of screenshots and the recent-apps preview.
+  @ReactMethod
+  fun setSecureWindow(enabled: Boolean) {
+    val activity = reactApplicationContext.currentActivity ?: return
+    activity.runOnUiThread {
+      if (enabled) activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+      else activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
   }
 
   private fun pbkdf2(pin: String, salt: ByteArray): ByteArray =

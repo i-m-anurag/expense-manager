@@ -41,6 +41,8 @@ import { ThemePref, useTheme } from '../theme/ThemeProvider';
 import { fonts, screenPadding } from '../theme/tokens';
 import { ordinal } from '../utils/format';
 import { APP_VERSION, SOURCE_URL, WEBSITE_URL } from '../version';
+import { Biometric, Notifications } from '../notify/native';
+import { openAppSettings } from '../permissions';
 
 type Dialog =
   | { kind: 'name' }
@@ -67,6 +69,27 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
   const salaryDay = Number(useQuery(s => getSetting(s, 'salary_day'), []) ?? 1);
   const accounts = useQuery(listAccounts, []) ?? [];
   const unparsed = useQuery(countUnparsed, []) ?? 0;
+  // Toggles default to on; "0" means the user switched it off.
+  const toggles = useQuery(async s => {
+    const keys = [
+      'notify_transactions',
+      'notify_budget',
+      'notify_upcoming',
+      'quiet_hours',
+      'lock_enabled',
+      'lock_biometric',
+      'block_screenshots',
+    ] as const;
+    const out: Record<string, boolean> = {};
+    for (const k of keys) out[k] = (await getSetting(s, k)) !== '0';
+    return out;
+  }, []);
+  const lockAfter = Number(
+    useQuery(s => getSetting(s, 'lock_after'), []) ?? 60,
+  );
+  const hasPin = useQuery(() => SecureStore.hasPin(), []) ?? false;
+  const notifEnabled = useQuery(() => Notifications.enabled(), []) ?? true;
+  const bioAvailable = useQuery(() => Biometric.isAvailable(), []) ?? false;
   const [dialog, setDialog] = useState<Dialog>(null);
   const [text, setText] = useState('');
   const [draftMode, setDraftMode] = useState<'calendar' | 'salary'>('calendar');
@@ -75,6 +98,26 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
   const [busy, setBusy] = useState(false);
 
   const banks = bundledTemplates().map(t => t.bank);
+
+  const setToggle = async (
+    key: Parameters<typeof setSetting>[1],
+    on: boolean,
+  ) => {
+    await setSetting(sql, key, on ? '1' : '0');
+    if (key === 'block_screenshots') SecureStore.setSecureWindow(on);
+    refresh();
+  };
+  const setLockAfter = async (seconds: number) => {
+    await setSetting(sql, 'lock_after', String(seconds));
+    refresh();
+  };
+  const setLock = async (on: boolean) => {
+    if (on && !hasPin) {
+      navigation.navigate('SetPin');
+      return;
+    }
+    await setToggle('lock_enabled', on);
+  };
 
   const openName = () => {
     setText(name ?? '');
@@ -247,6 +290,108 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
               />
             </View>
           ))}
+        </Group>
+
+        <Group
+          title="Notifications"
+          note={
+            notifEnabled
+              ? 'Quiet hours hold alerts until the morning and keep payment notifications silent.'
+              : undefined
+          }
+        >
+          {!notifEnabled ? (
+            <Row
+              label="Notifications are off for this app"
+              value="Turn them on in Android settings"
+              onPress={openAppSettings}
+              first
+            />
+          ) : null}
+          <ToggleRow
+            first={notifEnabled}
+            label="New payments"
+            hint="Each payment with one-tap tags"
+            value={toggles?.notify_transactions ?? true}
+            onChange={v => setToggle('notify_transactions', v)}
+          />
+          <ToggleRow
+            label="Budget alerts"
+            hint="At 50%, 80% and 100%, and when running ahead of pace"
+            value={toggles?.notify_budget ?? true}
+            onChange={v => setToggle('notify_budget', v)}
+          />
+          <ToggleRow
+            label="Upcoming payments"
+            hint="2 days before EMIs, SIPs, rent and bills"
+            value={toggles?.notify_upcoming ?? true}
+            onChange={v => setToggle('notify_upcoming', v)}
+          />
+          <ToggleRow
+            label="Quiet hours"
+            hint="10 PM – 8 AM"
+            value={toggles?.quiet_hours ?? true}
+            onChange={v => setToggle('quiet_hours', v)}
+          />
+        </Group>
+
+        <Group title="Security">
+          <ToggleRow
+            first
+            label="App lock"
+            hint={
+              hasPin
+                ? 'Ask for your PIN when opening the app'
+                : 'Set a PIN to lock the app'
+            }
+            value={hasPin && (toggles?.lock_enabled ?? true)}
+            onChange={setLock}
+          />
+          {hasPin ? (
+            <>
+              <Row
+                label="Change PIN"
+                onPress={() => navigation.navigate('SetPin')}
+              />
+              {bioAvailable ? (
+                <ToggleRow
+                  label="Unlock with fingerprint"
+                  value={toggles?.lock_biometric ?? true}
+                  onChange={v => setToggle('lock_biometric', v)}
+                />
+              ) : null}
+              <View
+                style={[
+                  styles.row,
+                  { borderTopWidth: 1, borderTopColor: c.border },
+                ]}
+              >
+                <Txt variant="bodyMedium" style={styles.flex}>
+                  Lock after
+                </Txt>
+                <View style={styles.chips}>
+                  {[
+                    [0, 'Now'],
+                    [60, '1 min'],
+                    [300, '5 min'],
+                  ].map(([sec, l]) => (
+                    <Chip
+                      key={l}
+                      label={String(l)}
+                      selected={lockAfter === sec}
+                      onPress={() => setLockAfter(Number(sec))}
+                    />
+                  ))}
+                </View>
+              </View>
+            </>
+          ) : null}
+          <ToggleRow
+            label="Block screenshots"
+            hint="Also hides the app in the recent apps view"
+            value={toggles?.block_screenshots ?? true}
+            onChange={v => setToggle('block_screenshots', v)}
+          />
         </Group>
 
         <Group title="Appearance">
@@ -507,6 +652,40 @@ function Row({
         <Icon name="chevronRight" size={18} color={c.textTertiary} />
       ) : null}
     </Pressable>
+  );
+}
+
+function ToggleRow({
+  label,
+  hint,
+  value,
+  onChange,
+  first,
+}: {
+  label: string;
+  hint?: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+  first?: boolean;
+}) {
+  const { c } = useTheme();
+  return (
+    <View
+      style={[
+        styles.row,
+        !first && { borderTopWidth: 1, borderTopColor: c.border },
+      ]}
+    >
+      <View style={styles.flex}>
+        <Txt variant="bodyMedium">{label}</Txt>
+        {hint ? (
+          <Txt variant="caption" tone="tertiary">
+            {hint}
+          </Txt>
+        ) : null}
+      </View>
+      <Toggle value={value} onChange={onChange} label={label} />
+    </View>
   );
 }
 

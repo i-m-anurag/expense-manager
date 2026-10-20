@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Txt } from './src/components/Txt';
 import { DataProvider } from './src/data/DataProvider';
 import { PrivacyProvider } from './src/data/Privacy';
+import { LockGate } from './src/lock/LockGate';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { OnboardingProvider } from './src/onboarding/OnboardingContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeProvider';
@@ -34,7 +35,9 @@ export default function App() {
         <DataProvider fallback={error => <Boot error={error} />}>
           <PrivacyProvider>
             <OnboardingProvider>
-              <RootNavigator />
+              <LockGate>
+                <RootNavigator />
+              </LockGate>
             </OnboardingProvider>
           </PrivacyProvider>
         </DataProvider>

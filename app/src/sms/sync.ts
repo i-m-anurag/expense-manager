@@ -2,6 +2,7 @@ import { allSenderCodes, bundledTemplates } from '@expense-manager/parser';
 import { getSetting, setSetting } from '../db/settings';
 import { Sql } from '../db/sql';
 import { ingestMessages } from '../domain/ingest';
+import { afterIngest } from '../notify/dispatch';
 import { SmsInbox } from './SmsInbox';
 
 // Re-read a little before the last processed message: clocks and delivery
@@ -37,6 +38,7 @@ export function reconcileInbox(sql: Sql): Promise<number> {
         'last_sms_at',
         String(Math.max(last, ...messages.map(m => m.receivedAt))),
       );
+      await afterIngest(sql, result.inserted);
       return result.inserted.length;
     } finally {
       running = null;

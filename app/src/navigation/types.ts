@@ -34,6 +34,7 @@ export type RootStackParamList = {
   EditBudget: undefined;
   UnparsedSms: undefined;
   Settings: undefined;
+  SetPin: undefined;
 };
 
 export type ScreenProps<T extends keyof RootStackParamList> =

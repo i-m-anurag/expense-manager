@@ -10,6 +10,7 @@ import { AppState } from 'react-native';
 import { getDb } from '../db/connection';
 import { getSetting } from '../db/settings';
 import { Sql } from '../db/sql';
+import { scheduleReminders } from '../notify/dispatch';
 import { reconcileInbox } from '../sms/sync';
 import { ThemePref, useTheme } from '../theme/ThemeProvider';
 
@@ -65,7 +66,10 @@ export function DataProvider({
     }
     const run = () =>
       reconcileInbox(boot.sql)
-        .then(n => n > 0 && refresh())
+        // Always refresh: a notification quick-tag may have changed data
+        // while the app was in the background.
+        .then(() => refresh())
+        .then(() => scheduleReminders(boot.sql))
         .catch(() => undefined);
     run();
     const sub = AppState.addEventListener(

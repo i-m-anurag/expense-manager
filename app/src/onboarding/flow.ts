@@ -12,6 +12,7 @@ type Step = Exclude<
   | 'EditBudget'
   | 'UnparsedSms'
   | 'Settings'
+  | 'SetPin'
 >;
 
 // Order of the onboarding journey after the permission screens. Manual mode

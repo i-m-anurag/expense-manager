@@ -11,7 +11,20 @@ export type SettingKey =
   | 'quiet_start'
   | 'quiet_end'
   | 'theme'
-  | 'notifications';
+  | 'notifications'
+  | 'notify_transactions'
+  | 'notify_budget'
+  | 'notify_upcoming'
+  | 'quiet_hours'
+  | 'lock_enabled'
+  | 'lock_biometric'
+  | 'lock_after'
+  | 'block_screenshots';
+
+// Toggles that are on unless the user switched them off.
+export async function isOn(sql: Sql, key: SettingKey) {
+  return (await getSetting(sql, key)) !== '0';
+}
 
 export async function getSetting(sql: Sql, key: SettingKey) {
   const row = await one<{ value: string }>(
