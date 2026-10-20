@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Keeps the CPU on for the few seconds it takes to store an incoming SMS. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Optional: the new-payment pop-up over other apps. Off until the user allows it. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
@@ -35,7 +37,7 @@
         </intent-filter>
       </activity>
 
-      <!-- Incoming bank SMS → Headless JS task (PRD SMS-07). -->
+      <!-- Incoming bank SMS → Headless JS task, run from the receiver (PRD SMS-07). -->
       <receiver
         android:name=".sms.SmsReceiver"
         android:exported="true"
@@ -44,11 +46,9 @@
           <action android:name="android.provider.Telephony.SMS_RECEIVED" />
         </intent-filter>
       </receiver>
-      <service android:name=".sms.SmsHeadlessService" android:exported="false" />
 
       <!-- Notification quick-tag buttons and scheduled reminders (PRD §7.8). -->
       <receiver android:name=".notify.NotificationActionReceiver" android:exported="false" />
       <receiver android:name=".notify.ScheduledNotificationReceiver" android:exported="false" />
-      <service android:name=".notify.QuickTagService" android:exported="false" />
     </application>
 </manifest>

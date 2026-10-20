@@ -135,15 +135,20 @@ function popupPalette(name: 'dark' | 'light') {
   };
 }
 
-// The pop-up over other apps, for the newest payment that still needs a
-// bucket. Only when allowed, outside the app, and not during quiet hours.
+// The pop-up over other apps for the newest payment: every payment by
+// default, or only ones that still need a bucket (Settings). Only when
+// allowed, outside the app, and not during quiet hours.
 async function maybePopup(
   sql: Sql,
   fresh: Awaited<ReturnType<typeof getTxn>>[],
   names: Record<string, string>,
   inQuiet: boolean,
 ) {
-  const t = [...fresh].reverse().find(x => x && !x.category_id);
+  const everyPayment =
+    (await getSetting(sql, 'popup_scope')) !== 'uncategorized';
+  const t = [...fresh]
+    .reverse()
+    .find(x => x && (everyPayment || !x.category_id));
   if (
     !t ||
     inQuiet ||

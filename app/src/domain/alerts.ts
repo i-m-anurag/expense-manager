@@ -163,8 +163,10 @@ export function paymentPopup(
   theme: string,
   palettes: Record<'dark' | 'light', Record<string, string>>,
 ) {
-  const suggested = t.suggested_category_id;
+  // Already categorised: show that category selected (the user can change it).
+  const suggested = t.category_id ?? t.suggested_category_id;
   return {
+    saved: !!t.category_id,
     txnId: t.id,
     notificationId: t.id,
     merchant: t.merchant_name ?? t.merchant_raw ?? 'Payment',

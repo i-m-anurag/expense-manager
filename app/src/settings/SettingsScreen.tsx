@@ -93,6 +93,7 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
   const bioAvailable = useQuery(() => Biometric.isAvailable(), []) ?? false;
   const canOverlay =
     useQuery(() => Notifications.canShowOverlay(), []) ?? false;
+  const popupScope = useQuery(s => getSetting(s, 'popup_scope'), []) ?? 'all';
   const [dialog, setDialog] = useState<Dialog>(null);
   const [text, setText] = useState('');
   const [draftMode, setDraftMode] = useState<'calendar' | 'salary'>('calendar');
@@ -121,6 +122,10 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
     if (on && !canOverlay) {
       Notifications.openOverlaySettings();
     }
+  };
+  const setScope = async (scope: 'all' | 'uncategorized') => {
+    await setSetting(sql, 'popup_scope', scope);
+    refresh();
   };
   const setLock = async (on: boolean) => {
     if (on && !hasPin) {
@@ -330,12 +335,36 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
             label="Pop-up over other apps"
             hint={
               canOverlay
-                ? 'A card slides in to ask for the bucket'
+                ? 'A card slides in with the bucket to save or change'
                 : 'Needs "Display over other apps". Turn on to allow.'
             }
             value={canOverlay && (toggles?.popup_payments ?? true)}
             onChange={setPopup}
           />
+          {canOverlay && (toggles?.popup_payments ?? true) ? (
+            <View
+              style={[
+                styles.row,
+                { borderTopWidth: 1, borderTopColor: c.border },
+              ]}
+            >
+              <Txt variant="bodyMedium" style={styles.flex}>
+                Show for
+              </Txt>
+              <View style={styles.chips}>
+                <Chip
+                  label="Every payment"
+                  selected={popupScope !== 'uncategorized'}
+                  onPress={() => setScope('all')}
+                />
+                <Chip
+                  label="Needs a bucket"
+                  selected={popupScope === 'uncategorized'}
+                  onPress={() => setScope('uncategorized')}
+                />
+              </View>
+            </View>
+          ) : null}
           <ToggleRow
             label="Budget alerts"
             hint="At 50%, 80% and 100%, and when running ahead of pace"

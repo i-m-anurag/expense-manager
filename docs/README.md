@@ -29,9 +29,12 @@ separate Gradle module once there is more than one native module.
 
 - `SmsInboxModule.readInbox(sinceMs, senderCodes, limit)`: backfill and on-open
   reconciliation. Filters by bank sender in Kotlin, so personal SMS never reach JS.
-- `SmsReceiver` + `SmsHeadlessService`: incoming SMS → `SmsReceived` Headless JS
-  task, which stores and categorises the transaction. The quick-tag
-  notification comes with alerts (M5).
+- `SmsReceiver`: incoming SMS → `SmsReceived` Headless JS task, which stores
+  and categorises the transaction and posts the notification/pop-up. The task
+  runs straight from the receiver (`HeadlessRunner.kt`, using `goAsync()`), not
+  from a Service: Android blocks background apps from starting services, which
+  meant SMS were only processed once the app was opened. Logs use the tag
+  `ExpenseManager` (`adb logcat -s ExpenseManager`).
 
 ### Encrypted storage (app/src/db, app/android/.../secure)
 
@@ -127,7 +130,9 @@ lock timing, screenshot blocking; about. Not yet: backup/restore and CSV export.
 - **Pop-up over other apps** (design Extras · 5c, `PaymentOverlay.kt`): when a
   new payment needs a bucket and the user is in another app, a native card
   slides in from the right with Need / Want / Investment / Loan, More
-  categories and Not now. A tap shows "Saved as … · Undo" for 3 seconds, then
+  categories and Not now. By default it shows for every payment, with an
+  already-detected category pre-selected ("Looks right" closes it); Settings
+  can limit it to payments that still need a bucket. A tap shows "Saved as … · Undo" for 3 seconds, then
   saves via `QuickTag`. Swipe sideways or wait 20 seconds to dismiss; the
   notification stays. Needs Android's "Display over other apps" permission
   (optional, turned on from Settings); skipped during quiet hours.

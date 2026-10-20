@@ -23,7 +23,6 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.facebook.react.HeadlessJsTaskService
 import org.json.JSONObject
 import kotlin.math.abs
 
@@ -142,9 +141,15 @@ object PaymentOverlay {
     // "Ask" state: hint, bucket grid, footer
     val ask = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
     val suggestion = spec.optString("suggestion", "")
+    // Already categorised: show it selected; another bucket changes it.
+    val alreadySaved = spec.optBoolean("saved", false)
     ask.addView(
         text(
-            if (suggestion.isEmpty()) "Which bucket does this belong to?" else "Looks like $suggestion. Tap to save.",
+            when {
+              alreadySaved -> "Sorted as $suggestion. Tap another bucket to change it."
+              suggestion.isEmpty() -> "Which bucket does this belong to?"
+              else -> "Looks like $suggestion. Tap to save."
+            },
             13f,
             col("textSecondary"),
             inter),
@@ -221,7 +226,7 @@ object PaymentOverlay {
 
     val footer = LinearLayout(ctx).apply { setPadding(0, dp(14f).toInt(), 0, 0) }
     val more = text("More categories", 13f, col("goldText"), interMedium).apply { setPadding(0, dp(6f).toInt(), dp(12f).toInt(), dp(6f).toInt()) }
-    val notNow = text("Not now", 13f, col("textTertiary"), interMedium).apply { setPadding(dp(12f).toInt(), dp(6f).toInt(), 0, dp(6f).toInt()) }
+    val notNow = text(if (alreadySaved) "Looks right" else "Not now", 13f, col("textTertiary"), interMedium).apply { setPadding(dp(12f).toInt(), dp(6f).toInt(), 0, dp(6f).toInt()) }
     footer.addView(more, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
     footer.addView(notNow)
     ask.addView(footer)
@@ -316,13 +321,6 @@ object PaymentOverlay {
   }
 
   private fun quickTag(ctx: Context, txnId: Int, categoryId: String, notificationId: Int) {
-    val service =
-        Intent(ctx, QuickTagService::class.java).apply {
-          putExtra(NotificationActionReceiver.EXTRA_TXN, txnId)
-          putExtra(NotificationActionReceiver.EXTRA_CATEGORY, categoryId)
-          putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION, notificationId)
-        }
-    HeadlessJsTaskService.acquireWakeLockNow(ctx)
-    ctx.startService(service)
+    QuickTag.run(ctx, txnId, categoryId, notificationId)
   }
 }
